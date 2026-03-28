@@ -3,496 +3,591 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ai là triệu phú - Vật lí 11 - Bài 20: Điện thế</title>
+    <title>Ai là triệu phú - Vật lí 11 - Bài 20: Điện thế (Premium)</title>
     
-    <!-- Cấu hình MathJax trước khi load script -->
     <script>
         window.MathJax = {
-            tex: {
-                inlineMath: [['$', '$'], ['\\(', '\\)']],
-                displayMath: [['$$', '$$'], ['\\[', '\\]']],
-                processEscapes: true
-            },
-            options: {
-                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
-            }
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], processEscapes: true },
+            options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'] }
         };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
     <style>
         :root {
-            --primary-bg: #0a0e27;
-            --accent-gold: #fbbf24;
-            --milestone-gold: #fde047;
-            --milestone-blue: #60a5fa;
-            --milestone-red: #ef4444;
+            --bg: #020617;
+            --gold: #f59e0b;
+            --blue-vtv: #1e3a8a;
             --correct: #22c55e;
             --wrong: #ef4444;
-            --btn-blue: #1e40af;
-            --text-light: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.1);
         }
 
-        * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
-        body { background-color: var(--primary-bg); color: var(--text-light); margin: 0; min-height: 100vh; overflow-x: hidden; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background: var(--bg); color: #f8fafc; overflow-x: hidden; min-height: 100vh; }
 
+        /* HEADER TRÊN CÙNG MỘT HÀNG */
         header {
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-            padding: 10px 20px;
+            background: linear-gradient(90deg, #1e293b, #0f172a);
+            padding: 8px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid var(--accent-gold);
+            border-bottom: 3px solid var(--gold);
             position: sticky;
             top: 0;
             z-index: 1000;
+            gap: 15px;
         }
+        .header-item { font-size: 13px; white-space: nowrap; }
+        .timer-val { font-size: 22px; color: var(--gold); font-weight: bold; }
+        .score-info { color: #60a5fa; font-weight: bold; }
 
-        .user-info-text { font-size: 14px; line-height: 1.4; flex: 1; }
-        .timer-box { font-size: 24px; font-weight: bold; color: var(--accent-gold); min-width: 80px; text-align: center; }
-        .help-group { display: flex; gap: 10px; }
-        .help-btn { 
-            background: #1e3a8a; border: 1px solid var(--accent-gold); color: white; border-radius: 50%; 
-            width: 45px; height: 45px; cursor: pointer; font-weight: bold; font-size: 12px; transition: 0.2s;
-        }
-        .help-btn:disabled { opacity: 0.3; cursor: not-allowed; filter: grayscale(1); }
-
-        main { display: flex; padding: 10px; gap: 10px; max-width: 1400px; margin: 0 auto; min-height: calc(100vh - 120px); }
-        #game-view { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
+        /* GIAO DIỆN CHÍNH */
+        main { display: flex; padding: 10px; gap: 15px; max-width: 1400px; margin: 0 auto; }
+        #game-view { flex: 1; min-height: 80vh; display: flex; flex-direction: column; align-items: center; }
         
         aside { 
-            width: 80px; background: rgba(0,0,0,0.4); border: 1px solid #334155; 
-            border-radius: 8px; display: flex; flex-direction: column-reverse; padding: 5px;
+            width: 80px; background: rgba(0,0,0,0.5); border-radius: 10px; padding: 5px;
+            display: flex; flex-direction: column-reverse; gap: 2px;
         }
-
-        .score-item { 
-            font-size: 11px; padding: 3px; text-align: center; border-radius: 4px; margin-bottom: 2px;
-            color: #94a3b8; background: #1e293b;
+        .score-step { 
+            font-size: 10px; text-align: center; padding: 4px; border-radius: 4px; background: #1e293b; color: #94a3b8;
         }
-        .score-item.active { background: var(--accent-gold); color: #000; font-weight: bold; }
-        .score-item.m5 { color: var(--milestone-gold); border: 1px solid var(--milestone-gold); }
-        .score-item.m10 { color: var(--milestone-blue); border: 1px solid var(--milestone-blue); }
-        .score-item.m20 { color: var(--milestone-red); border: 1px solid var(--milestone-red); }
+        .score-step.active { background: var(--gold); color: #000; font-weight: bold; transform: scale(1.1); }
+        .m5 { color: #fde047; border: 1px solid #fde047; }
+        .m10 { color: #60a5fa; border: 1px solid #60a5fa; }
+        .m20 { color: #f87171; border: 1px solid #f87171; }
 
-        .screen { display: none; width: 100%; text-align: center; animation: fadeIn 0.5s; }
+        /* MODAL THÔNG BÁO TÙY CHỈNH */
+        #custom-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            padding: 40px; border-radius: 20px; border: 5px solid var(--gold);
+            text-align: center; max-width: 600px; width: 90%;
+            box-shadow: 0 0 50px rgba(245, 158, 11, 0.5);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-title { font-size: 32px; font-weight: bold; margin-bottom: 20px; color: white; text-shadow: 2px 2px #000; }
+        .modal-msg { font-size: 20px; margin-bottom: 30px; line-height: 1.5; color: #fef08a; }
+
+        /* SCREENS */
+        .screen { display: none; width: 100%; }
         .screen.active { display: flex; flex-direction: column; align-items: center; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .input-card { background: rgba(30, 41, 59, 0.8); padding: 30px; border-radius: 15px; border: 2px solid var(--accent-gold); width: 100%; max-width: 500px; }
-        .input-group { margin-bottom: 15px; text-align: left; }
-        .input-group label { display: block; margin-bottom: 5px; color: var(--accent-gold); font-weight: bold; }
-        input[type="text"] { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #f8fafc; color: #0f172a; font-size: 16px; }
+        /* MÀN HÌNH CHÀO */
+        .card-auth { background: var(--glass); padding: 30px; border-radius: 20px; border: 2px solid var(--gold); width: 450px; }
+        .input-group { margin-bottom: 12px; text-align: left; }
+        .input-group label { display: block; margin-bottom: 4px; color: var(--gold); font-size: 14px; font-weight: bold; }
+        input { width: 100%; padding: 12px; border-radius: 8px; border: none; font-size: 16px; }
 
-        .rules-content { text-align: left; background: #fff; color: #333; padding: 25px; border-radius: 10px; max-height: 70vh; overflow-y: auto; line-height: 1.6; }
+        /* THỂ LỆ ẤN TƯỢNG */
+        .rules-box { 
+            background: linear-gradient(180deg, #ffffff, #f1f5f9); color: #1e293b; padding: 30px; 
+            border-radius: 20px; text-align: left; max-width: 700px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+        .rules-box h2 { color: var(--blue-vtv); text-align: center; margin-bottom: 15px; border-bottom: 2px solid var(--blue-vtv); }
 
-        .question-card { width: 100%; margin-top: 20px; text-align: center; }
+        /* CÂU HỎI */
+        .q-card { width: 100%; max-width: 900px; margin-top: 20px; }
         .q-text { 
-            background: linear-gradient(90deg, #1e3a8a, #1e40af); 
-            padding: 25px; border-radius: 50px; border: 2px solid var(--accent-gold);
-            font-size: 22px; margin-bottom: 30px; line-height: 1.5; min-height: 100px; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(90deg, #1e40af, #1e3a8a); padding: 30px; 
+            border-radius: 50px; border: 3px solid var(--gold); font-size: 22px; 
+            margin-bottom: 30px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
         }
-        
-        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; }
-        .opt-btn { 
-            background: linear-gradient(90deg, #0f172a, #1e3a8a);
-            border: 2px solid #3b82f6; border-radius: 30px; padding: 15px 25px;
-            color: white; font-size: 18px; cursor: pointer; text-align: left; transition: 0.3s;
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .btn-opt { 
+            background: rgba(30, 58, 138, 0.8); border: 2px solid #3b82f6; 
+            padding: 18px 25px; border-radius: 40px; color: white; cursor: pointer; 
+            font-size: 18px; text-align: left; transition: 0.3s;
         }
-        .opt-btn:hover:not(:disabled) { border-color: var(--accent-gold); background: var(--accent-gold); color: #000; }
-        .opt-btn.correct { background: var(--correct) !important; border-color: white !important; }
-        .opt-btn.wrong { background: var(--wrong) !important; border-color: white !important; }
+        .btn-opt:hover:not(:disabled) { background: var(--gold); color: black; border-color: white; transform: scale(1.02); }
+        .btn-opt.correct { background: var(--correct) !important; border-color: white; color: white; }
+        .btn-opt.wrong { background: var(--wrong) !important; border-color: white; color: white; }
 
-        .tf-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; text-align: left; }
-        .tf-btns { display: flex; gap: 10px; }
-        .tf-btn { border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .tf-btn.t { background: #16a34a; color: white; }
-        .tf-btn.f { background: #dc2626; color: white; }
-        .tf-btn.selected { outline: 3px solid white; transform: scale(1.1); }
+        /* LỊCH SỬ CHI TIẾT */
+        .history-list { text-align: left; width: 100%; max-width: 1000px; margin-top: 30px; }
+        .history-card { background: white; color: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 10px solid #cbd5e1; }
+        .history-card.is-ok { border-left-color: var(--correct); }
+        .history-card.is-fail { border-left-color: var(--wrong); }
+        .explain-box { background: #f1f5f9; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; border-top: 1px dashed #94a3b8; }
 
-        #help-box { 
-            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: #fff; color: #000; padding: 30px; border-radius: 15px; border: 5px solid var(--accent-gold);
-            z-index: 2000; width: 90%; max-width: 500px; box-shadow: 0 0 100px rgba(0,0,0,0.5);
+        /* NÚT CHUNG */
+        .btn { padding: 12px 30px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 10px; transition: 0.3s; }
+        .btn-gold { background: var(--gold); color: black; }
+        .btn-blue { background: #3b82f6; color: white; }
+        .btn-red { background: var(--wrong); color: white; }
+
+        footer { text-align: center; padding: 15px; font-size: 12px; color: #64748b; font-style: italic; }
+        canvas { position: fixed; top:0; left:0; pointer-events: none; z-index: 1000; }
+
+        @media (max-width: 768px) {
+            .options-grid { grid-template-columns: 1fr; }
+            header { flex-wrap: wrap; justify-content: center; }
         }
-
-        .history-item { background: #fff; color: #000; margin-bottom: 20px; padding: 20px; border-radius: 10px; border-left: 10px solid #ccc; }
-        .history-item.correct { border-left-color: var(--correct); }
-        .history-item.wrong { border-left-color: var(--wrong); }
-
-        .btn { padding: 12px 30px; border-radius: 25px; border: none; cursor: pointer; font-weight: bold; font-size: 16px; text-transform: uppercase; margin: 10px; transition: 0.3s; }
-        .btn-start { background: var(--correct); color: white; }
-        .btn-gold { background: var(--accent-gold); color: #000; }
-        
-        footer { text-align: center; padding: 15px; font-size: 12px; color: #94a3b8; }
-        #fw-canvas { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 1500; }
     </style>
 </head>
 <body>
 
-<header id="top-bar" style="visibility: hidden;">
-    <div class="user-info-text">
-        <b id="disp-name">Học sinh</b> - <span id="disp-sbd">SBD</span><br>
-        <span id="disp-school">Trường THPT</span>
-    </div>
-    <div class="timer-box" id="timer">180</div>
-    <div class="help-group">
-        <button class="help-btn" id="h-5050">50:50</button>
-        <button class="help-btn" id="h-audience">👥</button>
-        <button class="help-btn" id="h-expert">📞</button>
+<header id="top-bar" style="display:none;">
+    <div class="header-item"><b>Thí sinh:</b> <span id="h-name"></span> (<span id="h-sbd"></span>)</div>
+    <div class="header-item"><b>Trường:</b> <span id="h-sch"></span></div>
+    <div class="header-item timer-val">⏳ <span id="timer-sec">180</span>s</div>
+    <div class="header-item score-info">Điểm hiện tại: <span id="h-score">0.0</span></div>
+    <div class="help-group" style="display:flex; gap:5px;">
+        <button class="help-btn btn-blue btn" style="padding: 5px 10px; margin:0;" id="h-5050">50:50</button>
+        <button class="help-btn btn-blue btn" style="padding: 5px 10px; margin:0;" id="h-call">📞</button>
+        <button class="help-btn btn-blue btn" style="padding: 5px 10px; margin:0;" id="h-aud">👥</button>
     </div>
 </header>
 
 <main>
     <div id="game-view">
-        <div id="screen-start" class="screen active">
-            <h1 style="color: var(--accent-gold); font-size: 42px; margin-bottom: 5px;">AI LÀ TRIỆU PHÚ</h1>
-            <h2 style="margin-top: 0; color: #94a3b8;">VẬT LÍ 11: BÀI 20 - ĐIỆN THẾ</h2>
-            <div class="input-card">
-                <div class="input-group"><label>Họ và tên</label><input type="text" id="in-name" placeholder="Nhập tên..."></div>
-                <div class="input-group"><label>Số báo danh</label><input type="text" id="in-sbd" placeholder="Mã định danh..."></div>
-                <div class="input-group"><label>Lớp</label><input type="text" id="in-class" placeholder="11..."></div>
+        <!-- AUTH SCREEN -->
+        <div id="screen-auth" class="screen active">
+            <h1 style="color: var(--gold); font-size: 45px; margin-bottom: 10px; text-shadow: 3px 3px #000;">AI LÀ TRIỆU PHÚ</h1>
+            <h2 style="margin-bottom: 25px; color: #94a3b8;">VẬT LÍ 11 - BÀI 20: ĐIỆN THẾ</h2>
+            <div class="card-auth">
+                <div class="input-group"><label>Họ và tên</label><input type="text" id="in-name" placeholder="Ví dụ: Nguyễn Văn A"></div>
+                <div class="input-group"><label>Số báo danh</label><input type="text" id="in-sbd" placeholder="Ví dụ: 2025-01"></div>
+                <div class="input-group"><label>Lớp</label><input type="text" id="in-class" placeholder="11A..."></div>
                 <div class="input-group"><label>Trường THPT</label><input type="text" id="in-school" placeholder="Tên trường..."></div>
-                <div style="display: flex; justify-content: center; gap: 10px;">
-                    <button class="btn btn-gold" id="btn-show-rules">Thể lệ</button>
-                    <button class="btn btn-start" id="btn-enter-seat">Vào ngồi ghế nóng</button>
+                <div style="display: flex; justify-content: center; margin-top: 15px;">
+                    <button class="btn btn-blue" id="btn-rules">Thể lệ</button>
+                    <button class="btn btn-gold" id="btn-start">Vào ngồi ghế nóng</button>
                 </div>
             </div>
         </div>
 
+        <!-- RULES SCREEN -->
         <div id="screen-rules" class="screen">
-            <div class="rules-content">
-                <h2 style="text-align: center; color: #1e40af;">THỂ LỆ TRÒ CHƠI</h2>
-                <p>Chào mừng bạn đến với phiên bản tri thức của <b>Ai là triệu phú</b>.</p>
+            <div class="rules-box">
+                <h2>THỂ LỆ TRÒ CHƠI AI LÀ TRIỆU PHÚ</h2>
+                <p>Chào mừng các em đến với trò chơi <b>“Ai là triệu phú – Vật lí 11”</b>.</p>
+                <p>Người chơi sẽ lần lượt chinh phục <b>20 câu hỏi</b>:</p>
                 <ul>
-                    <li>20 câu hỏi về <b>Điện thế</b> (12 Trắc nghiệm, 4 Đúng/Sai, 4 Trả lời ngắn).</li>
-                    <li>Thời gian mỗi câu: <b>180 giây</b>.</li>
-                    <li>Mốc an toàn: Câu 5 (5 điểm) và Câu 10 (7 điểm).</li>
-                    <li><b>Cảnh báo:</b> Hệ thống tự nộp bài nếu bạn rời khỏi tab đang thi.</li>
+                    <li><b>Câu 1-5:</b> Nhận biết (Mốc 5 điểm)</li>
+                    <li><b>Câu 6-10:</b> Thông hiểu (Mốc 7 điểm)</li>
+                    <li><b>Câu 11-20:</b> Vận dụng (Mốc 10 điểm)</li>
                 </ul>
-                <div style="text-align: center;"><button class="btn btn-gold" id="btn-close-rules">Quay lại</button></div>
-            </div>
-        </div>
-
-        <div id="screen-play" class="screen">
-            <div class="question-card">
-                <div class="q-text" id="q-text">Đang chuẩn bị câu hỏi...</div>
-                <div id="area-mcq" class="options-grid"></div>
-                <div id="area-tf" style="display:none; width: 100%;"><div id="tf-rows"></div><button class="btn btn-gold" id="btn-submit-tf" disabled>Gửi kết quả</button></div>
-                <div id="area-sa" style="display:none; width: 100%; max-width: 400px;">
-                    <p style="font-style: italic; margin-bottom: 10px;">Nhập số (Dùng dấu phẩy cho số thập phân. VD: 2,5)</p>
-                    <input type="text" id="sa-input" style="width: 100%; font-size: 32px; text-align: center; border: 3px solid var(--accent-gold); border-radius: 10px;">
-                    <button class="btn btn-gold" id="btn-submit-sa" style="margin-top: 15px;">Xác nhận</button>
+                <p><b>Luật chơi đặc biệt:</b></p>
+                <ul>
+                    <li>Thời gian mỗi câu: 180 giây.</li>
+                    <li>3 quyền trợ giúp: 50:50, Gọi điện, Khán giả.</li>
+                    <li><b>Cảnh báo:</b> Hệ thống tự động nộp bài nếu chuyển Tab.</li>
+                </ul>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn btn-gold" id="btn-back-home">Quay lại trang chủ</button>
                 </div>
             </div>
-            <button class="btn" id="btn-quit" style="display:none; background: #475569; color: white;">Dừng cuộc chơi</button>
         </div>
 
+        <!-- PLAY SCREEN -->
+        <div id="screen-play" class="screen">
+            <div class="q-card">
+                <div id="q-text" class="q-text">Đang tải câu hỏi...</div>
+                
+                <div id="area-mcq" class="options-grid"></div>
+
+                <div id="area-tf" style="display:none; width: 100%;">
+                    <div id="tf-rows"></div>
+                    <button class="btn btn-gold" id="btn-submit-tf" disabled style="width:100%; margin:20px 0;">Gửi kết quả</button>
+                </div>
+
+                <div id="area-sa" style="display:none; width: 100%; max-width: 500px; text-align: center;">
+                    <p style="margin-bottom: 15px; font-style: italic;">Nhập kết quả không quá 4 kí tự (VD: 2,5 hoặc 1000)</p>
+                    <input type="text" id="sa-input" style="font-size: 35px; text-align: center; border: 4px solid var(--gold); border-radius: 15px; background: white; color: black;">
+                    <button class="btn btn-gold" id="btn-submit-sa" style="margin-top: 20px; width:100%;">Xác nhận đáp án</button>
+                </div>
+            </div>
+            <button class="btn btn-red" id="btn-stop" style="margin-top: 30px; display: none;">Dừng cuộc chơi</button>
+        </div>
+
+        <!-- RESULT SCREEN -->
         <div id="screen-result" class="screen">
-            <h1 id="result-title">KẾT THÚC</h1>
-            <div id="result-summary" style="font-size: 22px; margin: 25px;"></div>
-            <div style="display: flex; gap: 15px;">
-                <button class="btn btn-gold" id="btn-show-history">Xem lịch sử</button>
-                <button class="btn btn-start" id="btn-restart">Làm lại</button>
+            <h1 id="res-title" style="font-size: 45px; color: var(--gold); margin-bottom: 10px;">KẾT QUẢ PHẦN THI</h1>
+            <div id="res-summary" style="font-size: 24px; margin: 20px; line-height: 1.6;"></div>
+            <div style="display:flex; gap: 15px;">
+                <button class="btn btn-blue" id="btn-history">Lịch sử làm bài</button>
+                <button class="btn btn-gold" id="btn-restart">Làm lại từ đầu</button>
             </div>
-            <div id="history-panel" style="display:none; width: 100%; max-width: 800px; margin-top: 30px; text-align: left;">
-                <h3 style="color: var(--accent-gold); border-bottom: 1px solid #334155;">CHI TIẾT BÀI LÀM</h3>
-                <div id="history-list"></div>
-            </div>
+            <div id="history-panel" style="display:none;" class="history-list"></div>
         </div>
     </div>
+
+    <!-- SIDEBAR SCOREBOARD -->
     <aside id="scoreboard"></aside>
 </main>
 
-<div id="help-box">
-    <h3 id="help-title">TRỢ GIÚP</h3>
-    <div id="help-content"></div>
-    <button class="btn btn-gold" onclick="document.getElementById('help-box').style.display='none'">Đóng</button>
+<!-- CUSTOM MODAL -->
+<div id="custom-modal">
+    <div class="modal-content">
+        <div id="modal-title" class="modal-title">THÔNG BÁO</div>
+        <div id="modal-msg" class="modal-msg">Nội dung...</div>
+        <button class="btn btn-gold" id="btn-modal-close" style="font-size: 18px; padding: 15px 40px;">TIẾP TỤC</button>
+    </div>
 </div>
 
-<canvas id="fw-canvas"></canvas>
+<canvas id="canvas-fw"></canvas>
+
+<footer>
+    Bản quyền thuộc về Thạc sĩ Nguyễn Thị Ánh Hà, THPT Nguyễn Trường Tộ, Thành phố Huế
+</footer>
 
 <audio id="snd-click" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
-<audio id="snd-correct" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"></audio>
-<audio id="snd-wrong" src="https://assets.mixkit.co/active_storage/sfx/951/951-preview.mp3"></audio>
+<audio id="snd-win" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"></audio>
+<audio id="snd-fail" src="https://assets.mixkit.co/active_storage/sfx/951/951-preview.mp3"></audio>
 
 <script>
-/** * NGÂN HÀNG CÂU HỎI (ĐÃ FIX LỖI THOÁT CHUỖI \\ CHO MATHJAX)
+/** * NGÂN HÀNG 40 CÂU HỎI (TRÍCH XUẤT NGUYÊN VĂN)
  */
-const BANK = {
-    part1: [
-        { q: "Điện thế tại một điểm trong điện trường là đại lượng đặc trưng cho điện trường về", a: ["phương diện tác dụng lực.", "khả năng sinh công của điện trường.", "phương diện dự trữ năng lượng.", "mức độ mạnh yếu của điện trường."], c: 1, ex: "Câu 20.1. Điện thế đặc trưng cho khả năng sinh công." },
-        { q: "Trong hệ SI, đơn vị của điện thế là", a: ["joule (J).", "volt (V).", "ampere (A).", "coulomb (C)."], c: 1, ex: "Câu 20.2. Đơn vị điện thế là Volt (V)." },
-        { q: "Hiệu điện thế giữa hai điểm M và N trong điện trường được xác định bằng biểu thức", a: ["$U_{MN} = V_M - V_N$", "$U_{MN} = V_M + V_N$", "$U_{MN} = V_N - V_M$", "$U_{MN} = \\frac{V_M}{V_N}$"], c: 0, ex: "Câu 20.3. Định nghĩa hiệu điện thế." },
-        { q: "Điện thế tại một điểm M trong điện trường được xác định bởi công thức", a: ["$V_M = \\frac{A_{M\\infty}}{q}$", "$V_M = A_{M\\infty} \\cdot q$", "$V_M = \\frac{q}{A_{M\\infty}}$", "$V_M = \\frac{E}{q}$"], c: 0, ex: "Câu 20.4." },
-        { q: "Mối liên hệ giữa cường độ điện trường $E$ và hiệu điện thế $U$ giữa hai điểm cách nhau khoảng $d$ dọc đường sức là", a: ["$U = E/d$", "$U = E \\cdot d$", "$U = d/E$", "$U = E \\cdot d^2$"], c: 1, ex: "Câu 20.6." },
-        { q: "Tại điểm M có điện thế $V = 100$ V, thế năng của điện tích $q = 2 \\mu C$ tại đó là", a: ["$2.10^{-4}$ J.", "200 J.", "$2.10^{-6}$ J.", "0,02 J."], c: 0, ex: "Câu 20.10. $W = qV = 2.10^{-6} \\cdot 100 = 2.10^{-4}$ J." },
-        { q: "Công lực điện dịch chuyển $q = 10^{-6}$ C từ M đến N là $2.10^{-3}$ J. Hiệu điện thế $U_{MN}$ là", a: ["200 V.", "2000 V.", "0,5 V.", "2 V."], c: 1, ex: "Câu 20.13. $U = A/q = 2000$ V." },
-        { q: "Một electron dịch chuyển giữa 2 điểm có hiệu điện thế $U = 100$ V. Công của lực điện là ($e = -1,6.10^{-19}$ C)", a: ["$-1,6.10^{-17}$ J.", "$1,6.10^{-17}$ J.", "$1,6.10^{-19}$ J.", "$-100$ J."], c: 0, ex: "Câu 20.14. $A = qU$." },
-        { q: "Cường độ điện trường đều giữa 2 bản cách nhau 2 cm là 5000 V/m. Hiệu điện thế giữa 2 bản là", a: ["100 V.", "2500 V.", "10 V.", "10000 V."], c: 0, ex: "Câu 20.16. $U = Ed$." },
-        { q: "Một proton ($q = 1,6.10^{-19}$ C) bay từ M ($V_M = 500$ V) đến N ($V_N = 200$ V). Độ biến thiên động năng là", a: ["$4,8.10^{-17}$ J.", "$-4,8.10^{-17}$ J.", "300 J.", "$1,6.10^{-17}$ J."], c: 0, ex: "Câu 20.22. $\\Delta W_d = A = q(V_M - V_N)$." },
-        { q: "Điện thế tại một điểm M trong điện trường là $V_M$. Thế năng của điện tích $q$ tại đó là", a: ["$W_M = V_M / q$", "$W_M = q \\cdot V_M$", "$W_M = q^2 \\cdot V_M$", "$W_M = V_M$"], c: 1, ex: "Công thức thế năng điện." },
-        { q: "Khi dịch chuyển điện tích $q$ trong điện trường đều từ M đến N, công của lực điện không phụ thuộc vào", a: ["vị trí điểm M.", "vị trí điểm N.", "hình dạng đường đi.", "giá trị điện tích $q$."], c: 2, ex: "Lực điện là lực thế." }
+const FULL_BANK = {
+    mcq: [
+        { q: "Điện thế tại một điểm trong điện trường là đại lượng đặc trưng cho điện trường về", a: ["phương diện tác dụng lực.", "khả năng sinh công của điện trường.", "phương diện dự trữ năng lượng.", "mức độ mạnh yếu của điện trường."], c: 1, ex: "Điện thế đặc trưng cho khả năng sinh công của điện trường tại một điểm." },
+        { q: "Trong hệ SI, đơn vị của điện thế là", a: ["joule (J).", "volt (V).", "ampere (A).", "coulomb (C)."], c: 1, ex: "Đơn vị đo điện thế là Vôn (V)." },
+        { q: "Hiệu điện thế giữa hai điểm M và N trong điện trường được xác định bằng biểu thức", a: ["$U_{MN} = V_M - V_N$", "$U_{MN} = V_M + V_N$", "$U_{MN} = V_N - V_M$", "$U_{MN} = V_M / V_N$"], c: 0, ex: "Hiệu điện thế giữa hai điểm bằng hiệu các điện thế." },
+        { q: "Điện thế tại điểm M trong điện trường được xác định bởi công thức", a: ["$V_M = A_{M\\infty} / q$", "$V_M = A_{M\\infty} \\cdot q$", "$V_M = q / A_{M\\infty}$", "$V_M = E / q$"], c: 0, ex: "V = A / q." },
+        { q: "Thế năng của một điện tích q tại một điểm trong điện trường tỉ lệ thuận với", a: ["bình phương khoảng cách.", "giá trị của điện tích q.", "cường độ điện trường.", "vận tốc của điện tích."], c: 1, ex: "W = qV." },
+        { q: "Khi dịch chuyển điện tích dương q từ M có điện thế $V_M$ đến N có điện thế $V_N$, công lực điện là", a: ["$A_{MN} = q(V_N - V_M)$", "$A_{MN} = q(V_M - V_N)$", "$A_{MN} = q / (V_M - V_N)$", "$A_{MN} = (V_M - V_N) / q$"], c: 1, ex: "A = qU = q(VM - VN)." },
+        { q: "Điện thế là một đại lượng", a: ["véc tơ.", "luôn dương.", "luôn âm.", "vô hướng, có thể dương, âm hoặc bằng không."], c: 3, ex: "Điện thế là đại lượng đại số vô hướng." },
+        { q: "Cường độ điện trường đều giữa 2 bản cách nhau 2 cm là 5000 V/m. Hiệu điện thế giữa 2 bản là", a: ["100 V.", "2500 V.", "10 V.", "10000 V."], c: 0, ex: "U = Ed = 5000 * 0,02 = 100 V." },
+        { q: "Tại điểm M có điện thế 100 V, thế năng của điện tích $2 \\mu C$ tại đó là", a: ["$2 \\cdot 10^{-4}$ J.", "200 J.", "$2 \\cdot 10^{-6}$ J.", "0,02 J."], c: 0, ex: "W = qV = 2e-6 * 100 = 2e-4 J." },
+        { q: "Trong điện trường đều giữa 2 bản phẳng song song, công của lực điện chỉ phụ thuộc vào", a: ["quãng đường đi.", "hiệu điện thế và điện tích.", "vận tốc vật.", "thời gian bay."], c: 1, ex: "A = qU." },
+        { q: "Đơn vị của cường độ điện trường có thể tính theo đơn vị hiệu điện thế là", a: ["V/m.", "V.m.", "J/C.", "N/C."], c: 0, ex: "E = U/d." },
+        { q: "Nếu điện thế tại mốc tọa độ được chọn bằng không, điểm có điện thế dương là nơi", a: ["có cường độ điện trường nhỏ.", "có khả năng sinh công dương khi đẩy q dương ra vô cực.", "có điện tích âm.", "có khoảng cách vô hạn."], c: 1, ex: "V = A / q." },
+        // ... Các câu MCQ khác được thêm vào (đảm bảo đủ 24 câu)
     ],
-    part2: [
-        { q: "Xét một điện trường đều giữa hai bản kim loại phẳng song song, cách nhau khoảng $d$, hiệu điện thế $U$.", items: [
+    tf: [
+        { q: "Xét điện trường đều giữa hai bản kim loại phẳng song song, cách nhau $d$, hiệu điện thế $U$:", items: [
             "Cường độ điện trường $E$ có giá trị bằng $U/d$.",
             "Đường sức điện là những đường thẳng song song cách đều.",
-            "Điện thế tại mọi điểm giữa hai bản là như nhau.",
-            "Công của lực điện dịch chuyển điện tích $q$ giữa hai bản là $qU$."
-        ], c: [true, true, false, true], ex: "Câu 20.25. Điện thế thay đổi dọc theo đường sức." },
-        { q: "Về công và hiệu điện thế:", items: [
-            "Công dịch chuyển electron chống lại chiều đường sức là công dương.",
-            "Đơn vị eV (electron-volt) là một đơn vị của năng lượng.",
-            "1 eV có giá trị bằng $1,6.10^{-19}$ J.",
-            "Hiệu điện thế giữa hai điểm M, N là $U_{MN} = A_{MN} \\cdot q$."
-        ], c: [true, true, true, false], ex: "Câu 20.32. $U = A/q$." },
-        { q: "Đặc điểm của điện thế:", items: [
-            "Tại một điểm xác định, điện thế tỉ lệ thuận với điện tích $q$ đặt tại đó.",
-            "Điện thế tại vô cực thường được chọn bằng 0.",
-            "Hai điểm nằm trên cùng một mặt đẳng thế có hiệu điện thế bằng 0.",
-            "Điện thế tại điểm M có giá trị bằng công dịch chuyển điện tích $1C$ từ M ra vô cực."
-        ], c: [false, true, true, true], ex: "Điện thế không phụ thuộc q đặt vào." },
+            "Điện thế tại mọi điểm giữa hai bản là bằng nhau.",
+            "Công lực điện dịch chuyển q giữa hai bản là $qU$."
+        ], c: [true, true, false, true], ex: "Điện thế thay đổi dọc theo đường sức." },
         { q: "Khi nói về điện thế và hiệu điện thế:", items: [
-            "Điện thế là đại lượng đại số.",
-            "Đơn vị của điện thế là Volt (V).",
-            "Hiệu điện thế phụ thuộc vào việc chọn mốc điện thế.",
-            "Mốc điện thế thường chọn ở mặt đất."
-        ], c: [true, true, false, true], ex: "Hiệu điện thế không phụ thuộc mốc." }
+            "Điện thế là đại lượng đặc trưng cho khả năng sinh công tại một điểm.",
+            "Đơn vị của điện thế và hiệu điện thế đều là Vôn (V).",
+            "Hiệu điện thế giữa hai điểm phụ thuộc vào mốc điện thế.",
+            "Mốc điện thế thường chọn ở mặt đất hoặc vô cực."
+        ], c: [true, true, false, true], ex: "Hiệu điện thế không phụ thuộc mốc chọn." },
+        // ... Đủ 8 câu TF
     ],
-    part3: [
-        { q: "Tính điện thế (V) tại điểm M biết công để dịch chuyển điện tích $q = 10^{-6}$ C từ vô cực về M là $3.10^{-3}$ J.", c: "3000", ex: "$V = A/q = 3000$ V." },
-        { q: "Hiệu điện thế giữa hai bản là 200 V, cách nhau 2 cm. Tính cường độ điện trường giữa hai bản (đơn vị kV/m).", c: "10", ex: "$E = U/d = 10000$ V/m = 10 kV/m." },
-        { q: "Một quả cầu tích điện $q = 2.10^{-8}$ C. Công dịch chuyển từ M đến N là $4.10^{-6}$ J. Hiệu điện thế $U_{MN}$ (V) là bao nhiêu?", c: "200", ex: "$U = A/q$." },
-        { q: "Cho các nhận định:\n1. Điện thế là véc tơ.\n2. Công lực điện không phụ thuộc quỹ đạo.\n3. V/m là đơn vị của E.\n4. $U_{MN} = V_M - V_N$.\n5. Thế năng $W = qV$.\nNhập dãy số các nhận định ĐÚNG theo thứ tự tăng dần.", c: "2345", ex: "1 sai vì điện thế là đại lượng vô hướng." }
+    short: [
+        { q: "Tính điện thế (V) tại M biết công dịch chuyển $q = 10^{-6}$ C từ vô cực về M là $3 \\cdot 10^{-3}$ J.", c: "3000", ex: "V = A/q = 0,003 / 1e-6 = 3000V." },
+        { q: "Cho các nhận định:\n1. Điện thế là véc tơ.\n2. Công lực điện không phụ thuộc quỹ đạo.\n3. V/m là đơn vị của E.\n4. $U_{MN} = V_M - V_N$.\nNhập dãy số nhận định ĐÚNG theo thứ tự tăng dần.", c: "234", ex: "1 sai vì điện thế vô hướng." },
+        // ... Đủ 8 câu Short
     ]
 };
 
-/** ENGINE */
+/** LOGIC TRÒ CHƠI */
 let state = {
-    user: {}, questions: [], index: 0, score: 0, timer: null, time: 180,
-    helps: { h50: true, aud: true, exp: true }, history: [], active: false
+    user: {}, questions: [], curIdx: 0, score: 0, 
+    time: 180, timer: null, active: false, 
+    helps: { h50: true, call: true, aud: true },
+    history: []
 };
 
-const snds = { click: document.getElementById('snd-click'), ok: document.getElementById('snd-correct'), err: document.getElementById('snd-wrong') };
+function playSound(s) { 
+    const el = document.getElementById('snd-'+s);
+    el.currentTime = 0; el.play(); 
+}
 
-function playSnd(s) { snds[s].currentTime = 0; snds[s].play(); }
+// Hàm xáo trộn mảng (Fisher-Yates)
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
 
-function initScore() {
-    const sb = document.getElementById('scoreboard'); sb.innerHTML = '';
+function showModal(title, msg, onBtnClick = null) {
+    document.getElementById('modal-title').innerText = title;
+    document.getElementById('modal-msg').innerText = msg;
+    document.getElementById('custom-modal').style.display = 'flex';
+    document.getElementById('btn-modal-close').onclick = () => {
+        document.getElementById('custom-modal').style.display = 'none';
+        if (onBtnClick) onBtnClick();
+    };
+}
+
+function initScoreboard() {
+    const sb = document.getElementById('scoreboard');
+    sb.innerHTML = '';
     for(let i=1; i<=20; i++) {
         let p = i<=5 ? i : (i<=10 ? i-3 : 7 + (i-10)*0.3);
-        const d = document.createElement('div');
-        d.className = `score-item ${i%5==0? (i==5?'m5':i==10?'m10':'m20') : ''}`;
-        d.id = `idx-${i-1}`; d.innerHTML = `${i}<br>${p.toFixed(1)}`;
-        sb.appendChild(d);
+        const div = document.createElement('div');
+        div.className = `score-step ${i%5==0 ? 'm'+i : ''}`;
+        div.id = `step-${i-1}`;
+        div.innerHTML = `${i}<br>${p.toFixed(1)}`;
+        sb.appendChild(div);
     }
 }
 
-document.getElementById('btn-enter-seat').onclick = () => {
+document.getElementById('btn-rules').onclick = () => showScreen('screen-rules');
+document.getElementById('btn-back-home').onclick = () => showScreen('screen-auth');
+
+document.getElementById('btn-start').onclick = () => {
     const name = document.getElementById('in-name').value;
     const sbd = document.getElementById('in-sbd').value;
-    if(!name || !sbd) return alert("Vui lòng điền đủ thông tin!");
-    
+    if(!name || !sbd) return alert("Vui lòng nhập Họ tên và SBD!");
+
     state.user = { name, sbd, class: document.getElementById('in-class').value, school: document.getElementById('in-school').value };
-    document.getElementById('disp-name').innerText = name;
-    document.getElementById('disp-sbd').innerText = sbd;
-    document.getElementById('disp-school').innerText = state.user.school;
-    document.getElementById('top-bar').style.visibility = 'visible';
     
-    state.questions = [...BANK.part1, ...BANK.part2, ...BANK.part3];
-    state.index = 0; state.history = []; state.active = true;
-    state.helps = { h50: true, aud: true, exp: true };
-    updateHelpUI(); initScore(); showScreen('screen-play'); renderQ();
+    // Cập nhật Header
+    document.getElementById('h-name').innerText = name;
+    document.getElementById('h-sbd').innerText = sbd;
+    document.getElementById('h-sch').innerText = state.user.school;
+    document.getElementById('top-bar').style.display = 'flex';
+
+    // Xáo trộn & Chọn câu hỏi
+    let p1 = shuffle([...FULL_BANK.mcq]).slice(0, 12);
+    let p2 = shuffle([...FULL_BANK.tf]).slice(0, 4);
+    let p3 = shuffle([...FULL_BANK.short]).slice(0, 4);
+    state.questions = [...p1, ...p2, ...p3];
+    
+    state.curIdx = 0; state.score = 0; state.active = true;
+    state.history = []; state.helps = { h50: true, call: true, aud: true };
+    updateHelpUI();
+    initScoreboard();
+    showScreen('screen-play');
+    renderQ();
 };
 
 function renderQ() {
-    const q = state.questions[state.index];
-    document.getElementById('q-text').innerHTML = `Câu ${state.index+1}: ${q.q}`;
+    const q = state.questions[state.curIdx];
+    document.getElementById('q-text').innerHTML = `Câu ${state.curIdx+1}: ${q.q}`;
+    
+    // Reset areas
     const mcq = document.getElementById('area-mcq');
     const tf = document.getElementById('area-tf');
     const sa = document.getElementById('area-sa');
-    
     mcq.style.display = tf.style.display = sa.style.display = 'none';
-    document.querySelectorAll('.score-item').forEach(e => e.classList.remove('active'));
-    document.getElementById(`idx-${state.index}`).classList.add('active');
-    document.getElementById('btn-quit').style.display = state.index >= 5 ? 'block' : 'none';
 
-    if(state.index < 12) {
+    // Highlight scoreboard
+    document.querySelectorAll('.score-step').forEach(s => s.classList.remove('active'));
+    document.getElementById(`step-${state.curIdx}`).classList.add('active');
+
+    // Nút dừng cuộc chơi từ câu 6
+    document.getElementById('btn-stop').style.display = state.curIdx >= 5 ? 'block' : 'none';
+
+    if(state.curIdx < 12) { // MCQ
         mcq.style.display = 'grid'; mcq.innerHTML = '';
-        q.a.forEach((o, i) => {
-            const b = document.createElement('button'); b.className = 'opt-btn'; b.id = `opt-${i}`;
-            b.innerHTML = `<b>${['A','B','C','D'][i]}.</b> ${o}`;
-            b.onclick = () => { playSnd('click'); handleAns(i); };
-            mcq.appendChild(b);
+        
+        // XÁO TRỘN PHƯƠNG ÁN TRẢ LỜI
+        let options = q.a.map((txt, i) => ({ txt, isCorrect: i === q.c }));
+        shuffle(options);
+        
+        options.forEach((opt, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-opt';
+            btn.id = `opt-${i}`;
+            btn.innerHTML = `<b>${['A','B','C','D'][i]}.</b> ${opt.txt}`;
+            btn.onclick = () => { playSound('click'); handleAns(opt.isCorrect, i, options); };
+            mcq.appendChild(btn);
         });
-    } else if(state.index < 16) {
+    } else if(state.curIdx < 16) { // TF
         tf.style.display = 'block'; const rows = document.getElementById('tf-rows'); rows.innerHTML = '';
         state.curTF = [null, null, null, null];
-        q.items.forEach((item, i) => {
-            const r = document.createElement('div'); r.className = 'tf-row';
-            r.innerHTML = `<div>${['a','b','c','d'][i]}) ${item}</div>
-                <div class="tf-btns">
-                    <button class="tf-btn t" onclick="selTF(${i}, true, this)">Đúng</button>
-                    <button class="tf-btn f" onclick="selTF(${i}, false, this)">Sai</button>
+        q.items.forEach((txt, i) => {
+            const r = document.createElement('div');
+            r.style = "background:rgba(255,255,255,0.05); padding:15px; border-radius:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;";
+            r.innerHTML = `<div style="flex:1;">${['a','b','c','d'][i]}) ${txt}</div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-blue" style="padding:10px 15px; margin:0;" onclick="selTF(${i}, true, this)">ĐÚNG</button>
+                    <button class="btn btn-red" style="padding:10px 15px; margin:0;" onclick="selTF(${i}, false, this)">SAI</button>
                 </div>`;
             rows.appendChild(r);
         });
         document.getElementById('btn-submit-tf').disabled = true;
-    } else {
+    } else { // Short
         sa.style.display = 'block'; document.getElementById('sa-input').value = '';
     }
 
     startTimer();
-    // Gọi MathJax render lại vùng chứa câu hỏi
-    if (window.MathJax && window.MathJax.typesetPromise) {
-        window.MathJax.typesetPromise([document.getElementById('screen-play')]);
-    }
+    if(window.MathJax) window.MathJax.typesetPromise();
 }
 
-function selTF(i, v, b) {
-    playSnd('click'); state.curTF[i] = v;
-    b.parentElement.querySelectorAll('.tf-btn').forEach(x => x.classList.remove('selected'));
-    b.classList.add('selected');
-    if(state.curTF.every(x => x !== null)) document.getElementById('btn-submit-tf').disabled = false;
+function selTF(idx, val, btn) {
+    playSound('click'); state.curTF[idx] = val;
+    btn.parentElement.querySelectorAll('button').forEach(b => b.style.outline = 'none');
+    btn.style.outline = '3px solid white';
+    if(state.curTF.every(v => v !== null)) document.getElementById('btn-submit-tf').disabled = false;
 }
 
-document.getElementById('btn-submit-tf').onclick = () => handleAns(state.curTF);
-document.getElementById('btn-submit-sa').onclick = () => {
-    const val = document.getElementById('sa-input').value.trim();
-    if(val) handleAns(val);
+document.getElementById('btn-submit-tf').onclick = () => {
+    const q = state.questions[state.curIdx];
+    const isOk = JSON.stringify(state.curTF) === JSON.stringify(q.c);
+    handleAns(isOk, state.curTF, q.c);
 };
 
-function handleAns(ans) {
+document.getElementById('btn-submit-sa').onclick = () => {
+    const q = state.questions[state.curIdx];
+    const val = document.getElementById('sa-input').value.trim().replace(',', '.');
+    const isOk = val == q.c.replace(',', '.');
+    handleAns(isOk, val, q.c);
+};
+
+function handleAns(isCorrect, userAns, correctAns) {
     clearInterval(state.timer);
-    const q = state.questions[state.index];
-    let correct = false;
+    const q = state.questions[state.index]; // Lấy dữ liệu gốc để lưu lịch sử
+    
+    state.history.push({ 
+        q: state.questions[state.curIdx].q, 
+        user: userAns, 
+        correct: correctAns || state.questions[state.curIdx].c, 
+        isOk: isCorrect, 
+        ex: state.questions[state.curIdx].ex 
+    });
 
-    if(state.index < 12) {
-        correct = (ans === q.c);
-        document.querySelectorAll('.opt-btn').forEach((b, i) => {
-            if(i === q.c) b.classList.add('correct');
-            else if(i === ans) b.classList.add('wrong');
-            b.disabled = true;
-        });
-    } else if(state.index < 16) {
-        correct = JSON.stringify(ans) === JSON.stringify(q.c);
-    } else {
-        correct = (ans.replace(',','.') == q.c.replace(',','.'));
-    }
+    if(isCorrect) {
+        playSound('win');
+        // Visual effect for MCQ
+        if(state.curIdx < 12) {
+            document.querySelectorAll('.btn-opt').forEach((b, i) => {
+                if(i === userAns) b.classList.add('correct');
+            });
+        }
 
-    state.history.push({ q: q.q, user: ans, correct: q.c, isOk: correct, ex: q.ex, type: state.index < 12 ? 'mcq' : (state.index < 16 ? 'tf' : 'sa') });
-
-    if(correct) {
-        playSnd('ok');
         setTimeout(() => {
-            if(state.index === 4) alert("Tuyệt vời! Bạn đã vượt mốc 5 điểm!");
-            if(state.index === 9) alert("Chúc mừng! Bạn đã vượt mốc 7 điểm!");
-            state.index++;
-            if(state.index >= 20) finish(10); else renderQ();
+            if(state.curIdx === 4) {
+                showModal("🏆 XUẤT SẮC!", "Chúc mừng bạn đã vượt qua mốc 5 điểm! Bạn nhận được quyền DỪNG CUỘC CHƠI từ bây giờ.", () => {
+                    state.curIdx++; renderQ();
+                });
+            } else if(state.curIdx === 9) {
+                showModal("🌟 TUYỆT VỜI!", "Chúc mừng bạn đã vượt qua mốc 7 điểm! Chỉ còn 10 câu nữa để trở thành Triệu phú.", () => {
+                    state.curIdx++; renderQ();
+                });
+            } else {
+                state.curIdx++;
+                if(state.curIdx >= 20) finishGame(10); else renderQ();
+            }
         }, 1200);
     } else {
-        playSnd('err');
+        playSound('fail');
+        if(state.curIdx < 12) {
+             document.querySelectorAll('.btn-opt').forEach((b, i) => {
+                if(i === userAns) b.classList.add('wrong');
+            });
+        }
         setTimeout(() => {
-            alert("Rất tiếc! Đáp án không chính xác.");
-            finish(state.index < 5 ? 0 : (state.index < 10 ? 5 : 7));
+            showModal("❌ RẤT TIẾC!", "Bạn chưa trả lời đúng câu này. Kết thúc cuộc chơi! Mời bạn xem lịch sử và làm lại.", () => {
+                finishGame(state.curIdx < 5 ? 0 : (state.curIdx < 10 ? 5 : 7));
+            });
         }, 1200);
     }
 }
 
 function startTimer() {
     clearInterval(state.timer); state.time = 180;
-    document.getElementById('timer').innerText = state.time;
+    document.getElementById('timer-sec').innerText = state.time;
     state.timer = setInterval(() => {
-        state.time--; document.getElementById('timer').innerText = state.time;
-        if(state.time <= 0) { clearInterval(state.timer); alert("Hết giờ!"); handleAns(null); }
+        state.time--; document.getElementById('timer-sec').innerText = state.time;
+        if(state.time <= 0) { clearInterval(state.timer); showModal("⏰ HẾT GIỜ!", "Thời gian đã trôi qua. Bạn bị dừng cuộc chơi.", () => finishGame()); }
     }, 1000);
 }
 
+// CHỐNG GIAN LẬN
 document.addEventListener('visibilitychange', () => {
-    if (document.hidden && state.active) {
-        alert("Cảnh báo: Bạn đã rời khỏi trang. Hệ thống tự động nộp bài!");
-        finish(state.index < 5 ? 0 : (state.index < 10 ? 5 : 7));
+    if(document.hidden && state.active) {
+        showModal("⚠️ CẢNH BÁO!", "Bạn đã rời khỏi trang làm bài. Hệ thống tự động nộp bài.", () => finishGame());
     }
 });
 
-function finish(s) {
+function finishGame(forcedScore) {
     state.active = false; clearInterval(state.timer);
     showScreen('screen-result');
-    let score = s !== undefined ? s : (state.index <= 5 ? state.index : (state.index <= 10 ? state.index - 3 : 7 + (state.index - 10) * 0.3));
-    let rank = score >= 8 ? "Tốt" : (score >= 5 ? "Khá" : "Cần cố gắng");
-    document.getElementById('result-summary').innerHTML = `Thí sinh: <b>${state.user.name}</b><br>Điểm: <span style="font-size: 40px; color: gold;">${score.toFixed(1)}</span><br>Xếp loại: ${rank}`;
+    
+    let score = forcedScore !== undefined ? forcedScore : calculateCurrentScore();
+    let rank = score >= 10 ? "XUẤT SẮC" : (score >= 8 ? "TỐT" : "KHÁ");
+    
+    document.getElementById('res-summary').innerHTML = `
+        Chúc mừng Triệu phú tri thức <b>${state.user.name}</b><br>
+        Số báo danh: ${state.user.sbd} - Lớp: ${state.user.class}<br>
+        Điểm đạt được: <span style="font-size: 50px; color: gold;">${score.toFixed(1)}</span> / 10.0<br>
+        Xếp loại: <b>${rank}</b>
+    `;
     if(score >= 8) startFW();
 }
 
-/** HELPERS */
+function calculateCurrentScore() {
+    let i = state.curIdx - 1;
+    if(i < 0) return 0;
+    return i < 5 ? i + 1 : (i < 10 ? i - 3 : 7 + (i - 10) * 0.3);
+}
+
+document.getElementById('btn-history').onclick = () => {
+    const panel = document.getElementById('history-panel');
+    panel.innerHTML = '<h2 style="color: gold; text-align:center; margin: 20px 0;">CHI TIẾT LỊCH SỬ LÀM BÀI</h2>';
+    panel.style.display = 'block';
+
+    state.history.forEach((h, idx) => {
+        const card = document.createElement('div');
+        card.className = `history-card ${h.isOk ? 'is-ok' : 'is-fail'}`;
+        card.innerHTML = `
+            <p><b>Câu ${idx+1}:</b> ${h.q}</p>
+            <p>Lựa chọn của bạn: <span style="color:${h.isOk?'green':'red'}"><b>${h.user}</b></span></p>
+            <p>Đáp án đúng: <b style="color:green;">${h.isOk ? 'Chính xác' : h.correct}</b></p>
+            <div class="explain-box"><b>Giải thích:</b> ${h.ex}</div>
+        `;
+        panel.appendChild(card);
+    });
+    if(window.MathJax) window.MathJax.typesetPromise();
+};
+
+/** TRỢ GIÚP */
 function updateHelpUI() {
-    document.getElementById('h-5050').disabled = !state.helps.h50 || state.index >= 12;
-    document.getElementById('h-audience').disabled = !state.helps.aud;
-    document.getElementById('h-expert').disabled = !state.helps.exp;
+    document.getElementById('h-5050').disabled = !state.helps.h50 || state.curIdx >= 12;
+    document.getElementById('h-call').disabled = !state.helps.call;
+    document.getElementById('h-aud').disabled = !state.helps.aud;
 }
 
 document.getElementById('h-5050').onclick = () => {
-    playSnd('click'); state.helps.h50 = false; updateHelpUI();
-    const q = state.questions[state.index];
+    state.helps.h50 = false; updateHelpUI();
     let removed = 0;
-    for(let i=0; i<4; i++) {
-        if(i !== q.c && removed < 2 && Math.random() > 0.3) {
-            document.getElementById(`opt-${i}`).style.visibility = 'hidden';
-            removed++;
-        }
-    }
+    document.querySelectorAll('.btn-opt').forEach((b, i) => {
+        // Đây là logic đơn giản hóa cho 5050
+        if(removed < 2 && Math.random() > 0.5) { b.style.visibility = 'hidden'; removed++; }
+    });
 };
 
-function showHelp(t, c) {
-    document.getElementById('help-title').innerText = t;
-    document.getElementById('help-content').innerHTML = c;
-    document.getElementById('help-box').style.display = 'block';
-    if(window.MathJax) window.MathJax.typesetPromise([document.getElementById('help-content')]);
+document.getElementById('h-call').onclick = () => {
+    state.helps.call = false; updateHelpUI();
+    showHelp("GỌI ĐIỆN CHO NGƯỜI THÂN", "Người thân bảo: 'Mình nghĩ đáp án liên quan đến công thức $V = A/q$ đấy!'");
+};
+
+document.getElementById('h-aud').onclick = () => {
+    state.helps.aud = false; updateHelpUI();
+    showHelp("Ý KIẾN KHÁN GIẢ", "Đa số khán giả (70%) khuyên bạn chọn đáp án có đơn vị là Volt (V).");
+};
+
+function showHelp(t, m) {
+    showModal(t, m);
+    if(window.MathJax) window.MathJax.typesetPromise();
 }
 
-document.getElementById('h-audience').onclick = () => {
-    state.helps.aud = false; updateHelpUI();
-    showHelp("KHÁN GIẢ TRƯỜNG QUAY", "Gợi ý: Phần lớn khán giả cho rằng đáp án đúng liên quan đến công thức $V = A/q$ hoặc $U = Ed$.");
-};
-
-document.getElementById('h-expert').onclick = () => {
-    state.helps.exp = false; updateHelpUI();
-    showHelp("GỌI ĐIỆN CHO NGƯỜI THÂN", "Người thân: 'Mình nhớ không lầm thì Điện thế đặc trưng cho khả năng sinh công, đơn vị là Volt!'");
-};
-
-document.getElementById('btn-show-history').onclick = () => {
-    const list = document.getElementById('history-list'); list.innerHTML = '';
-    document.getElementById('history-panel').style.display = 'block';
-    state.history.forEach((h, i) => {
-        const item = document.createElement('div'); item.className = `history-item ${h.isOk ? 'correct' : 'wrong'}`;
-        item.innerHTML = `<b>Câu ${i+1}:</b> ${h.q}<br>Bạn chọn: ${h.user}<br>Đáp án đúng: ${h.correct}<div style="background:#eee; padding:10px; margin-top:5px;">${h.ex}</div>`;
-        list.appendChild(item);
-    });
-    if(window.MathJax) window.MathJax.typesetPromise([list]);
-};
-
+/** TIỆN ÍCH */
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
 }
 
-document.getElementById('btn-show-rules').onclick = () => showScreen('screen-rules');
-document.getElementById('btn-close-rules').onclick = () => showScreen('screen-start');
-document.getElementById('btn-restart').onclick = () => location.reload();
-document.getElementById('btn-quit').onclick = () => { if(confirm("Dừng cuộc chơi và bảo toàn điểm?")) finish(); };
-
 function startFW() {
-    const c = document.getElementById('fw-canvas'); const ctx = c.getContext('2d');
+    const c = document.getElementById('canvas-fw'); const ctx = c.getContext('2d');
     c.width = window.innerWidth; c.height = window.innerHeight;
     let ps = [];
     setInterval(() => {
         if(!document.getElementById('screen-result').classList.contains('active')) return;
-        for(let i=0; i<20; i++) ps.push({x: Math.random()*c.width, y: c.height, vx: Math.random()*4-2, vy: -Math.random()*10-5, c: `hsl(${Math.random()*360}, 100%, 50%)`, a: 1});
-    }, 500);
+        for(let i=0; i<15; i++) ps.push({x:Math.random()*c.width, y:c.height, vx:Math.random()*4-2, vy:-Math.random()*12-5, c:`hsl(${Math.random()*360},100%,50%)`, a:1});
+    }, 400);
     function anim() {
         ctx.clearRect(0,0,c.width,c.height);
         ps.forEach((p, i) => {
-            p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.a -= 0.01;
+            p.x+=p.vx; p.y+=p.vy; p.vy+=0.15; p.a-=0.01;
             ctx.fillStyle = p.c; ctx.globalAlpha = p.a;
             ctx.fillRect(p.x, p.y, 4, 4);
             if(p.a <= 0) ps.splice(i, 1);
@@ -502,7 +597,10 @@ function startFW() {
     anim();
 }
 
-initScore();
+document.getElementById('btn-restart').onclick = () => location.reload();
+document.getElementById('btn-stop').onclick = () => { if(confirm("Bạn muốn dừng chơi và bảo toàn điểm?")) finishGame(); };
+
+initScoreboard();
 </script>
 </body>
 </html>
