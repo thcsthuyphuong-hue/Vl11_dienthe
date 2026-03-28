@@ -10,7 +10,7 @@
 body{
 margin:0;
 font-family:Arial;
-background:#06152b;
+background:linear-gradient(135deg,#001a33,#003366);
 color:white;
 }
 
@@ -19,41 +19,32 @@ color:white;
 display:flex;
 justify-content:space-between;
 padding:10px;
-background:#0b1c3f;
-font-size:14px;
+background:#001f4d;
 }
 
 /* LAYOUT */
 .main{
 display:flex;
-height:calc(100vh - 50px);
+height:calc(100vh - 60px);
 }
 
 /* QUESTION */
 .question-area{
 flex:1;
-padding:15px;
+padding:20px;
 }
 
 /* SCOREBOARD */
 .scoreboard{
-width:80px; /* ~2cm */
-background:#021024;
-padding:5px;
-display:flex;
-flex-direction:column;
-align-items:center;
+width:80px;
+background:#001633;
 overflow:auto;
 }
 
 .score-item{
-font-size:12px;
-padding:3px;
-margin:2px;
-width:60px;
 text-align:center;
-background:#102a5c;
-border-radius:5px;
+padding:5px;
+font-size:12px;
 }
 
 .current{
@@ -71,32 +62,21 @@ border-radius:8px;
 cursor:pointer;
 }
 
-.answer:hover{
-background:#234;
-}
+.answer:hover{background:#234}
 
-/* HISTORY */
-.correct{
-background:#1e7e34;
-}
-
-.wrong{
-background:#c82333;
-}
+.correct{background:#28a745}
+.wrong{background:#dc3545}
 
 /* RESULT */
-.result{
-padding:15px;
-}
+.result{padding:20px}
 </style>
 </head>
 
 <body>
 
-<div id="start" style="padding:20px">
+<div id="start" style="text-align:center;margin-top:50px">
 <h2>AI LÀ TRIỆU PHÚ - ĐIỆN THẾ</h2>
 <input id="name" placeholder="Họ tên"><br><br>
-<input id="sbd" placeholder="SBD"><br><br>
 <button onclick="startGame()">Vào ghế nóng</button>
 </div>
 
@@ -124,36 +104,60 @@ padding:15px;
 
 <script>
 
-/* ================= DATA ================= */
+/* ================= NGÂN HÀNG CÂU HỎI ================= */
+/* LẤY NGUYÊN VĂN từ file */
 
-const questions = [
+const bank = [
 {
-q:"Điện thế tại một điểm đặc trưng cho?",
-a:["Tác dụng lực","Khả năng sinh công","Dự trữ năng lượng","Mức độ mạnh yếu"],
+type:"mcq",
+q:"Điện thế tại một điểm trong điện trường là đại lượng đặc trưng cho điện trường về",
+a:[
+"phương diện tác dụng lực",
+"khả năng sinh công của điện trường",
+"phương diện dự trữ năng lượng",
+"mức độ mạnh yếu của điện trường"
+],
 correct:1,
 explain:"Điện thế đặc trưng cho khả năng sinh công của điện trường."
 },
 {
-q:"Đơn vị điện thế là gì?",
-a:["J","V","A","C"],
+type:"mcq",
+q:"Trong hệ SI, đơn vị của điện thế là",
+a:["joule (J)","volt (V)","ampere (A)","coulomb (C)"],
 correct:1,
 explain:"Đơn vị điện thế là volt (V)."
 },
 {
-q:"Thế năng của điện tích q tỉ lệ với?",
-a:["q²","q","1/q","không phụ thuộc"],
+type:"mcq",
+q:"Trong điện trường, nếu đi dọc theo chiều của đường sức điện thì điện thế sẽ",
+a:["tăng dần","giảm dần","không thay đổi","bằng không"],
 correct:1,
-explain:"W = qV → tỉ lệ thuận với q."
+explain:"Điện thế giảm theo chiều đường sức."
+},
+{
+type:"tf",
+q:"Xét điện trường đều giữa hai bản song song",
+a:[
+"Điện thế đặc trưng cho khả năng sinh công",
+"Các điểm trên cùng đường sức có cùng điện thế",
+"Chọn mốc khác làm thay đổi điện thế",
+"Điện thế tăng theo chiều đường sức"
+],
+correct:["Đ","S","Đ","S"],
+explain:"Điện thế không đổi theo mặt đẳng thế, giảm theo chiều đường sức."
+},
+{
+type:"short",
+q:"Một điện tích có thế năng 3000 J với q=1 C. Điện thế là bao nhiêu V?",
+correct:"3000",
+explain:"V = W/q = 3000/1 = 3000 V"
 }
 ];
 
 /* ================= VAR ================= */
 
-let current = 0;
-let score = 0;
-let timer;
-let time = 30;
-let history = [];
+let questions = bank.sort(()=>Math.random()-0.5).slice(0,5);
+let current=0,score=0,time=30,history=[],timer;
 
 /* ================= START ================= */
 
@@ -162,45 +166,50 @@ document.getElementById("start").style.display="none";
 document.getElementById("game").style.display="block";
 
 document.getElementById("info").innerText =
-"Thí sinh: " + document.getElementById("name").value;
+"Thí sinh: "+document.getElementById("name").value;
 
-renderScoreboard();
 showQuestion();
 }
 
 /* ================= SCOREBOARD ================= */
 
-function renderScoreboard(){
-let board = document.getElementById("scoreboard");
-board.innerHTML="";
+function renderScore(){
+let html="";
 for(let i=20;i>=1;i--){
-let div = document.createElement("div");
-div.className="score-item";
-if(i===current+1) div.classList.add("current");
-div.innerText=i;
-board.appendChild(div);
+html+=`<div class="score-item ${i===current+1?"current":""}">${i}</div>`;
 }
+document.getElementById("scoreboard").innerHTML=html;
 }
 
 /* ================= QUESTION ================= */
 
 function showQuestion(){
-renderScoreboard();
+renderScore();
 
-let q = questions[current];
-document.getElementById("question").innerText =
-"Câu " + (current+1) + ": " + q.q;
+let q=questions[current];
+document.getElementById("question").innerText="Câu "+(current+1)+": "+q.q;
 
-let ansDiv = document.getElementById("answers");
-ansDiv.innerHTML="";
+let html="";
 
+if(q.type==="mcq"){
 q.a.forEach((ans,i)=>{
-let btn = document.createElement("div");
-btn.className="answer";
-btn.innerText = String.fromCharCode(65+i) + ". " + ans;
-btn.onclick=()=>checkAnswer(i);
-ansDiv.appendChild(btn);
+html+=`<div class="answer" onclick="answer(${i})">${String.fromCharCode(65+i)}. ${ans}</div>`;
 });
+}
+
+if(q.type==="tf"){
+q.a.forEach((ans,i)=>{
+html+=`${ans} 
+<button onclick="answerTF(${i},'Đ')">Đ</button>
+<button onclick="answerTF(${i},'S')">S</button><br>`;
+});
+}
+
+if(q.type==="short"){
+html+=`<input id="inputAns"><button onclick="answerShort()">OK</button>`;
+}
+
+document.getElementById("answers").innerHTML=html;
 
 startTimer();
 }
@@ -209,52 +218,53 @@ startTimer();
 
 function startTimer(){
 time=30;
-updateTimer();
-
 timer=setInterval(()=>{
 time--;
-updateTimer();
-if(time<=0){
-clearInterval(timer);
-alert("Hết giờ!");
-endGame();
-}
+document.getElementById("timer").innerText="⏳ "+time;
+if(time<=0){endGame()}
 },1000);
 }
 
-function updateTimer(){
-document.getElementById("timer").innerText = "⏳ " + time + "s";
-}
+/* ================= ANSWER ================= */
 
-/* ================= CHECK ================= */
-
-function checkAnswer(i){
+function answer(i){
 clearInterval(timer);
+let q=questions[current];
 
-let q = questions[current];
+history.push({q,selected:i});
 
-history.push({
-question:q,
-selected:i,
-correct:q.correct
-});
+if(i===q.correct){score++}
+else{endGame();return}
 
-if(i===q.correct){
-score++;
-alert("Đúng!");
-}else{
-alert("Sai!");
-endGame();
-return;
+next();
 }
 
+function answerTF(i,val){
+let q=questions[current];
+if(!history[current]) history[current]={q,selected:[]};
+history[current].selected[i]=val;
+
+if(history[current].selected.length===4){
+next();
+}
+}
+
+function answerShort(){
+let val=document.getElementById("inputAns").value;
+let q=questions[current];
+
+history.push({q,selected:val});
+
+if(val===q.correct) score++;
+else{endGame();return}
+
+next();
+}
+
+function next(){
 current++;
-
-if(current>=questions.length){
-endGame();
-}else{
-showQuestion();
-}
+if(current>=questions.length) endGame();
+else showQuestion();
 }
 
 /* ================= RESULT ================= */
@@ -264,34 +274,27 @@ function endGame(){
 document.getElementById("game").style.display="none";
 document.getElementById("result").style.display="block";
 
-let html = "<div class='result'>";
-html += "<h2>🎉 KẾT QUẢ: " + score + "/" + questions.length + "</h2>";
+let html="<div class='result'>";
+html+="<h2>Điểm: "+score+"</h2>";
 
-history.forEach((item,index)=>{
-html += "<div style='margin-bottom:20px'>";
+history.forEach((item,i)=>{
+html+=`<div><b>Câu ${i+1}: ${item.q.q}</b>`;
 
-html += "<b>Câu " + (index+1) + ": " + item.question.q + "</b><br>";
-
-item.question.a.forEach((ans,i)=>{
-
+if(item.q.type==="mcq"){
+item.q.a.forEach((ans,index)=>{
 let cls="";
+if(index===item.q.correct) cls="correct";
+if(index===item.selected && index!==item.q.correct) cls="wrong";
+html+=`<div class="${cls}">${String.fromCharCode(65+index)}. ${ans}</div>`;
+});
+}
 
-if(i===item.correct) cls="correct";
-if(i===item.selected && i!==item.correct) cls="wrong";
-
-html += "<div class='"+cls+"'>" +
-String.fromCharCode(65+i) + ". " + ans + "</div>";
-
+html+=`<i>Giải thích: ${item.q.explain}</i></div><hr>`;
 });
 
-html += "<i>Giải thích:</i> " + item.question.explain;
+html+="</div>";
 
-html += "</div>";
-});
-
-html += "</div>";
-
-document.getElementById("result").innerHTML = html;
+document.getElementById("result").innerHTML=html;
 }
 
 </script>
