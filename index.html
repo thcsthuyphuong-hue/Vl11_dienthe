@@ -3,102 +3,217 @@
 <head>
 <meta charset="UTF-8">
 <title>Ai là triệu phú - Điện thế</title>
+
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
 <style>
-body{font-family:Arial;margin:0;background:#0b1c3f;color:white}
-.container{padding:10px}
-.header{display:flex;justify-content:space-between}
-.scoreboard{position:absolute;right:0;top:60px;width:120px}
-.question{margin-top:20px;font-size:20px}
-.answers button{display:block;width:100%;margin:5px;padding:10px;font-size:16px}
-.correct{background:green}
-.wrong{background:red}
+body{
+margin:0;
+font-family:Arial;
+background:#06152b;
+color:white;
+}
+
+/* HEADER */
+.header{
+display:flex;
+justify-content:space-between;
+padding:10px;
+background:#0b1c3f;
+font-size:14px;
+}
+
+/* LAYOUT */
+.main{
+display:flex;
+height:calc(100vh - 50px);
+}
+
+/* QUESTION */
+.question-area{
+flex:1;
+padding:15px;
+}
+
+/* SCOREBOARD */
+.scoreboard{
+width:80px; /* ~2cm */
+background:#021024;
+padding:5px;
+display:flex;
+flex-direction:column;
+align-items:center;
+overflow:auto;
+}
+
+.score-item{
+font-size:12px;
+padding:3px;
+margin:2px;
+width:60px;
+text-align:center;
+background:#102a5c;
+border-radius:5px;
+}
+
+.current{
+background:#ffcc00;
+color:black;
+font-weight:bold;
+}
+
+/* ANSWERS */
+.answer{
+background:#123;
+margin:5px;
+padding:10px;
+border-radius:8px;
+cursor:pointer;
+}
+
+.answer:hover{
+background:#234;
+}
+
+/* HISTORY */
+.correct{
+background:#1e7e34;
+}
+
+.wrong{
+background:#c82333;
+}
+
+/* RESULT */
+.result{
+padding:15px;
+}
 </style>
 </head>
 
 <body>
 
-<div id="start">
+<div id="start" style="padding:20px">
 <h2>AI LÀ TRIỆU PHÚ - ĐIỆN THẾ</h2>
-<input id="name" placeholder="Họ tên"><br>
-<input id="sbd" placeholder="SBD"><br>
+<input id="name" placeholder="Họ tên"><br><br>
+<input id="sbd" placeholder="SBD"><br><br>
 <button onclick="startGame()">Vào ghế nóng</button>
 </div>
 
 <div id="game" style="display:none">
+
 <div class="header">
 <div id="info"></div>
 <div id="timer"></div>
 </div>
 
-<div class="question" id="question"></div>
-<div class="answers" id="answers"></div>
+<div class="main">
+
+<div class="question-area">
+<h3 id="question"></h3>
+<div id="answers"></div>
 </div>
 
+<div class="scoreboard" id="scoreboard"></div>
+
+</div>
+
+</div>
+
+<div id="result" style="display:none"></div>
+
 <script>
-let questions = [
-{q:"Điện thế tại một điểm đặc trưng cho?",a:["Tác dụng lực","Khả năng sinh công","Dự trữ năng lượng","Mức độ mạnh"],correct:1},
-{q:"Đơn vị điện thế?",a:["J","V","A","C"],correct:1},
-{q:"Hiệu điện thế là?",a:["Lực","Khả năng sinh công giữa 2 điểm","Điện tích","Dòng điện"],correct:1},
-{q:"Trong điện trường đều U = ?",a:["Ed","E/d","d/E","E+d"],correct:0},
-{q:"Điện thế phụ thuộc?",a:["Không phụ thuộc","Luôn dương","Phụ thuộc mốc","Luôn âm"],correct:2},
-{q:"Hiệu điện thế 12V nghĩa là?",a:["1C sinh công 12J","Điện tích 12C","Electron 12J","E=12"],correct:0},
-{q:"Dòng điện chạy từ?",a:["Thấp→cao","Cao→thấp","0→dương","Âm→dương"],correct:1},
-{q:"Thế năng W = ?",a:["q/V","qV","V/q","q+V"],correct:1},
-{q:"Đi dọc đường sức, điện thế?",a:["Tăng","Giảm","Không đổi","0"],correct:1},
-{q:"Mốc điện thế thường chọn?",a:["Cực dương","Mặt đất","Bất kỳ","Max"],correct:1}
+
+/* ================= DATA ================= */
+
+const questions = [
+{
+q:"Điện thế tại một điểm đặc trưng cho?",
+a:["Tác dụng lực","Khả năng sinh công","Dự trữ năng lượng","Mức độ mạnh yếu"],
+correct:1,
+explain:"Điện thế đặc trưng cho khả năng sinh công của điện trường."
+},
+{
+q:"Đơn vị điện thế là gì?",
+a:["J","V","A","C"],
+correct:1,
+explain:"Đơn vị điện thế là volt (V)."
+},
+{
+q:"Thế năng của điện tích q tỉ lệ với?",
+a:["q²","q","1/q","không phụ thuộc"],
+correct:1,
+explain:"W = qV → tỉ lệ thuận với q."
+}
 ];
+
+/* ================= VAR ================= */
 
 let current = 0;
 let score = 0;
-let time = 30;
 let timer;
+let time = 30;
+let history = [];
+
+/* ================= START ================= */
 
 function startGame(){
 document.getElementById("start").style.display="none";
 document.getElementById("game").style.display="block";
+
+document.getElementById("info").innerText =
+"Thí sinh: " + document.getElementById("name").value;
+
+renderScoreboard();
 showQuestion();
 }
 
+/* ================= SCOREBOARD ================= */
+
+function renderScoreboard(){
+let board = document.getElementById("scoreboard");
+board.innerHTML="";
+for(let i=20;i>=1;i--){
+let div = document.createElement("div");
+div.className="score-item";
+if(i===current+1) div.classList.add("current");
+div.innerText=i;
+board.appendChild(div);
+}
+}
+
+/* ================= QUESTION ================= */
+
 function showQuestion(){
+renderScoreboard();
+
 let q = questions[current];
-document.getElementById("question").innerText = q.q;
+document.getElementById("question").innerText =
+"Câu " + (current+1) + ": " + q.q;
+
 let ansDiv = document.getElementById("answers");
 ansDiv.innerHTML="";
+
 q.a.forEach((ans,i)=>{
-let btn=document.createElement("button");
-btn.innerText=ans;
+let btn = document.createElement("div");
+btn.className="answer";
+btn.innerText = String.fromCharCode(65+i) + ". " + ans;
 btn.onclick=()=>checkAnswer(i);
 ansDiv.appendChild(btn);
 });
+
 startTimer();
 }
 
-function checkAnswer(i){
-clearInterval(timer);
-let correct = questions[current].correct;
-if(i===correct){
-score++;
-alert("Đúng!");
-}else{
-alert("Sai! Kết thúc.");
-endGame();
-return;
-}
-current++;
-if(current>=questions.length){
-endGame();
-}else{
-showQuestion();
-}
-}
+/* ================= TIMER ================= */
 
 function startTimer(){
 time=30;
-document.getElementById("timer").innerText="Time: "+time;
+updateTimer();
+
 timer=setInterval(()=>{
 time--;
-document.getElementById("timer").innerText="Time: "+time;
+updateTimer();
 if(time<=0){
 clearInterval(timer);
 alert("Hết giờ!");
@@ -107,10 +222,78 @@ endGame();
 },1000);
 }
 
-function endGame(){
-alert("Điểm: "+score);
-location.reload();
+function updateTimer(){
+document.getElementById("timer").innerText = "⏳ " + time + "s";
 }
+
+/* ================= CHECK ================= */
+
+function checkAnswer(i){
+clearInterval(timer);
+
+let q = questions[current];
+
+history.push({
+question:q,
+selected:i,
+correct:q.correct
+});
+
+if(i===q.correct){
+score++;
+alert("Đúng!");
+}else{
+alert("Sai!");
+endGame();
+return;
+}
+
+current++;
+
+if(current>=questions.length){
+endGame();
+}else{
+showQuestion();
+}
+}
+
+/* ================= RESULT ================= */
+
+function endGame(){
+
+document.getElementById("game").style.display="none";
+document.getElementById("result").style.display="block";
+
+let html = "<div class='result'>";
+html += "<h2>🎉 KẾT QUẢ: " + score + "/" + questions.length + "</h2>";
+
+history.forEach((item,index)=>{
+html += "<div style='margin-bottom:20px'>";
+
+html += "<b>Câu " + (index+1) + ": " + item.question.q + "</b><br>";
+
+item.question.a.forEach((ans,i)=>{
+
+let cls="";
+
+if(i===item.correct) cls="correct";
+if(i===item.selected && i!==item.correct) cls="wrong";
+
+html += "<div class='"+cls+"'>" +
+String.fromCharCode(65+i) + ". " + ans + "</div>";
+
+});
+
+html += "<i>Giải thích:</i> " + item.question.explain;
+
+html += "</div>";
+});
+
+html += "</div>";
+
+document.getElementById("result").innerHTML = html;
+}
+
 </script>
 
 </body>
