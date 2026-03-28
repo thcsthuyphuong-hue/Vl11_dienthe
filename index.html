@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ai là triệu phú - Vật lí 11: Dao động điều hòa</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- MathJax Configuration -->
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <!-- SheetJS for Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Roboto', sans-serif; background: radial-gradient(circle, #1e3a8a 0%, #000000 100%); color: white; min-height: 100vh; overflow-y: auto; font-size: 19px; margin: 0; }
+        #app { min-height: 100vh; display: flex; flex-direction: column; position: relative; z-index: 10; }
+        .sidebar { width: 175px; flex-shrink: 0; border-left: 2px solid #3b82f6; background: rgba(15, 23, 42, 0.95); }
+        
+        /* Câu hỏi: Giảm kích thước khung và cỡ chữ hài hòa */
+        .question-box {
+            background: rgba(30, 58, 138, 0.9);
+            border: 2px solid #60a5fa;
+            border-radius: 20px;
+            padding: 12px 20px;
+            margin-bottom: 8px;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 1.05rem; /* Cỡ chữ câu hỏi nhỏ hơn */
+            line-height: 1.4;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+        }
+
+        .option-btn {
+            background: linear-gradient(to right, #1e40af, #3b82f6);
+            border: 1px solid #60a5fa;
+            border-radius: 9999px;
+            transition: all 0.2s;
+            text-align: left;
+            padding: 8px 18px;
+            cursor: pointer;
+            margin-bottom: 4px; /* Thu hẹp khoảng cách */
+            width: 100%;
+            font-size: 0.9rem;
+        }
+        .option-btn:hover { background: #fbbf24; color: black; transform: scale(1.01); }
+        .option-btn.selected { background: #f59e0b; color: white; border-color: #fff; box-shadow: 0 0 10px #f59e0b; }
+        .option-btn.hidden-option { opacity: 0; pointer-events: none; }
+        
+        .milestone-item { padding: 3px 8px; margin-bottom: 1px; border-radius: 4px; display: flex; justify-content: space-between; font-size: 12px; }
+        .milestone-active { background: #fbbf24; color: black; font-weight: bold; }
+        
+        /* Footer bản quyền to và rõ ràng hơn */
+        .footer-copyright { 
+            width: 100%; 
+            text-align: center; 
+            padding: 16px; 
+            font-size: 18px; /* To hơn */
+            background: rgba(0,0,0,0.95); 
+            margin-top: auto; 
+            font-weight: 900;
+            color: #fbbf24; /* Màu vàng nổi bật */
+            border-top: 2px solid #3b82f6;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        #fireworks-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; display: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 3px; }
+
+        input[type="text"], input[type="password"] { color: black; border-radius: 8px; padding: 10px; font-size: 16px; outline: none; border: 2px solid transparent; }
+        .tf-btn { width: 75px; padding: 5px; border-radius: 8px; cursor: pointer; border: 2px solid #fff; transition: 0.3s; font-size: 13px; font-weight: bold; }
+        .tf-btn.true { background: #10b981; }
+        .tf-btn.false { background: #ef4444; }
+        .tf-btn.inactive { opacity: 0.2; filter: grayscale(1); }
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-content { background: #1e3a8a; border: 4px solid #fbbf24; border-radius: 30px; padding: 30px; max-width: 550px; width: 90%; text-align: center; }
+
+        .history-card { background: #ffffff; color: #1e293b; border-radius: 16px; padding: 20px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .choice-correct { background: #dcfce7; border: 2px solid #22c55e; color: #166534; padding: 10px; border-radius: 10px; margin: 4px 0; font-weight: 600; }
+        .choice-wrong { background: #fee2e2; border: 2px solid #ef4444; color: #991b1b; padding: 10px; border-radius: 12px; margin: 4px 0; font-weight: 600; }
+        .choice-neutral { background: #f8fafc; border: 1px solid #cbd5e1; color: #475569; padding: 8px; border-radius: 8px; margin: 4px 0; }
+        .explanation-box { background: #f0f9ff; border-left: 5px solid #0ea5e9; padding: 12px; margin-top: 10px; border-radius: 8px; font-size: 0.85em; line-height: 1.6; font-style: italic; }
+
+        .admin-table { width: 100%; border-collapse: collapse; background: white; color: black; font-size: 14px; min-width: 900px; }
+        .admin-table th, .admin-table td { border: 1px solid #eee; padding: 10px; text-align: left; }
+        .admin-table th { background: #1e3a8a; color: white; position: sticky; top: 0; font-weight: 900; }
+        
+        .screen-container { flex: 1; display: flex; flex-direction: column; padding: 10px 20px; overflow-y: auto; }
+        .inner-content { max-width: 1000px; width: 100%; margin: 0 auto; }
+    </style>
+</head>
+<body>
+
+<canvas id="fireworks-canvas"></canvas>
+
+<div id="app">
+    <!-- Screen: Info Input -->
+    <div id="screen-info" class="screen-container items-center justify-center">
+        <div class="inner-content flex flex-col items-center text-white">
+            <h1 class="text-4xl md:text-6xl font-black text-yellow-400 text-center mb-6 uppercase tracking-tighter drop-shadow-2xl">Ai Là Triệu Phú Vật Lí 11</h1>
+            <div class="bg-blue-900/95 p-6 md:p-10 rounded-[40px] border-4 border-yellow-500 w-full max-w-lg space-y-4 shadow-2xl relative backdrop-blur-sm">
+                <button onclick="window.showAdminLogin()" class="absolute -top-5 -right-5 bg-black w-14 h-14 rounded-full border-4 border-yellow-500 flex items-center justify-center text-xs font-black hover:bg-yellow-500 hover:text-black transition shadow-xl text-white">ADM</button>
+                <p class="text-center text-blue-200 text-xs font-bold uppercase tracking-widest">Thông tin thí sinh</p>
+                <div class="space-y-3">
+                    <div><label class="block mb-1 font-bold text-sm ml-2 uppercase text-blue-100">Họ và tên</label><input type="text" id="input-name" class="w-full h-10" placeholder="Nguyễn Văn A"></div>
+                    <div><label class="block mb-1 font-bold text-sm ml-2 uppercase text-blue-100">Số báo danh</label><input type="text" id="input-sbd" class="w-full h-10" placeholder="VD: 001"></div>
+                    <div><label class="block mb-1 font-bold text-sm ml-2 uppercase text-blue-100">Lớp</label><input type="text" id="input-class" class="w-full h-10" placeholder="VD: 11A1"></div>
+                    <div><label class="block mb-1 font-bold text-sm ml-2 uppercase text-blue-100">Trường THPT</label><input type="text" id="input-school" class="w-full h-10" placeholder="VD: Nguyễn Trường Tộ"></div>
+                </div>
+                
+                <div class="pt-3 space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="window.showRules()" class="bg-gray-700 py-2.5 rounded-xl font-bold uppercase text-white shadow-md hover:bg-gray-600 transition text-sm">Thể lệ</button>
+                        <button onclick="window.startMode('practice')" class="bg-blue-600 text-white py-2.5 rounded-xl font-bold uppercase shadow-md hover:bg-blue-50 transition text-sm">Luyện tập</button>
+                    </div>
+                    <button onclick="window.startMode('exam')" class="w-full bg-yellow-500 text-blue-950 py-3.5 rounded-xl font-black uppercase transition shadow-2xl text-lg border-b-6 border-yellow-700 active:translate-y-1 active:border-b-0">Vào làm bài thi (Anti-Cheat)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Admin -->
+    <div id="modal-admin-login" class="hidden modal-overlay">
+        <div class="modal-content shadow-[0_0_100px_rgba(251,191,36,0.3)] text-white">
+            <h3 class="text-3xl font-black text-yellow-400 mb-2 uppercase">Hệ Thống Quản Trị</h3>
+            <p class="mb-6 text-blue-100 italic text-sm">Xác minh mật khẩu để truy cập dữ liệu</p>
+            <input type="password" id="admin-pass-input" class="w-full mb-8 text-center text-3xl tracking-[10px] border-4 border-blue-400" placeholder="••••••">
+            <div class="flex space-x-4">
+                <button onclick="window.hideAdminLogin()" class="flex-1 bg-gray-600 py-3 rounded-xl font-bold uppercase">Hủy</button>
+                <button onclick="window.checkAdminPass()" class="flex-1 bg-green-600 py-3 rounded-xl font-bold uppercase shadow-lg">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen: Admin Panel -->
+    <div id="screen-admin" class="hidden screen-container bg-slate-100 text-black">
+        <div class="inner-content">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b-4 border-blue-900 pb-4 gap-6">
+                <h2 class="text-2xl font-black uppercase text-blue-900 font-bold">📊 Thống Kê Kết Quả</h2>
+                <div class="flex space-x-3 text-white">
+                    <button onclick="window.exportToExcel()" class="bg-green-700 text-white px-4 py-2 rounded-xl font-bold text-xs uppercase shadow-xl hover:bg-green-600 transition">Xuất File .XLSX</button>
+                    <button onclick="window.backToHome()" class="bg-red-600 text-white px-4 py-2 rounded-xl font-bold text-xs uppercase shadow-xl hover:bg-red-500 transition">Thoát</button>
+                </div>
+            </div>
+            <div class="bg-white rounded-[30px] shadow-2xl overflow-hidden border border-slate-200">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="admin-table">
+                        <thead><tr><th>Hạng</th><th>Họ Tên</th><th>SBD</th><th>Lớp</th><th>Trường</th><th>Điểm</th><th>Làm bài (s)</th><th>Nộp lúc</th></tr></thead>
+                        <tbody id="admin-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen: Game -->
+    <div id="screen-game" class="hidden flex-1 flex flex-col overflow-hidden">
+        <div class="bg-blue-900/95 p-2 border-b-2 border-blue-400 flex justify-between items-center shadow-lg relative z-20 text-white">
+            <div id="user-display" class="font-bold text-xs md:text-sm text-blue-100 truncate max-w-[45%] font-black uppercase"></div>
+            <div id="timer" class="text-yellow-400 font-black text-4xl px-2">180s</div>
+            <div class="flex space-x-2">
+                <button onclick="window.use5050()" id="help-5050" class="w-10 h-10 bg-blue-700 border-2 border-white rounded-full flex items-center justify-center font-black text-[10px] hover:bg-yellow-500 transition">50:50</button>
+                <button onclick="window.useAudience()" id="help-audience" class="w-10 h-10 bg-blue-700 border-2 border-white rounded-full flex items-center justify-center text-sm hover:bg-yellow-500 transition">👥</button>
+                <button onclick="window.usePhone()" id="help-phone" class="w-10 h-10 bg-blue-700 border-2 border-white rounded-full flex items-center justify-center text-sm hover:bg-yellow-500 transition">📞</button>
+            </div>
+        </div>
+        <div class="flex flex-1 overflow-hidden">
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar bg-black/50 text-white">
+                <div id="question-box" class="inner-content flex flex-col min-h-full">
+                    <div id="question-text" class="question-box"></div>
+                    <div id="help-hint-box" class="hidden p-4 bg-yellow-50 text-blue-950 rounded-2xl border-l-[10px] border-yellow-500 text-sm italic shadow-lg mb-4 font-bold"></div>
+                    <div id="answers-container" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                    <div class="mt-auto pt-6 pb-28 flex justify-between items-center text-white">
+                         <button onclick="window.confirmQuit()" id="btn-stop" class="hidden bg-red-700 px-6 py-2.5 rounded-xl font-black uppercase text-xs shadow-xl hover:bg-red-600 transition">Dừng chơi</button>
+                         <button onclick="window.submitAnswer()" id="btn-submit" class="ml-auto bg-green-600 px-12 py-3 rounded-[20px] font-black uppercase shadow-2xl hover:bg-green-500 transition border-b-4 border-green-800 text-lg tracking-tighter">Nộp bài</button>
+                    </div>
+                </div>
+            </div>
+            <div id="scoreboard-sidebar" class="sidebar p-2 flex flex-col space-y-0.5 overflow-y-auto custom-scrollbar text-white"></div>
+        </div>
+    </div>
+
+    <!-- Screen: Final Results -->
+    <div id="screen-result" class="hidden screen-container items-center justify-center bg-black/40">
+        <div class="inner-content flex flex-col items-center py-6 text-white text-center">
+            <h2 class="text-4xl md:text-6xl font-black text-yellow-400 mb-6 drop-shadow-lg uppercase tracking-tighter text-center font-black">VINH DANH TRIỆU PHÚ</h2>
+            <div id="result-message" class="text-xl mb-8 bg-blue-900/95 p-8 md:p-12 rounded-[50px] border-8 border-yellow-500 shadow-2xl max-w-4xl leading-relaxed backdrop-blur-xl text-center text-white"></div>
+            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-8 pb-10">
+                <button onclick="window.showHistory()" class="bg-blue-600 hover:bg-blue-500 px-10 py-4 rounded-[30px] font-black transition shadow-2xl text-xl text-white uppercase border-b-6 border-blue-800">Phân tích bài làm</button>
+                <button onclick="window.resetGame()" class="bg-green-600 hover:bg-green-500 px-10 py-4 rounded-[30px] font-black transition shadow-2xl text-xl text-white uppercase border-b-6 border-blue-800">Làm lại</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen: History -->
+    <div id="screen-history" class="hidden screen-container bg-slate-50 text-black border-t-[8px] border-blue-900">
+        <div class="inner-content pb-28 text-black">
+            <h2 class="text-3xl font-black uppercase text-blue-950 text-center py-8 border-b-4 border-blue-900 mb-6 bg-white rounded-b-3xl shadow-md">Lịch Sử Bài Làm Chi Tiết</h2>
+            <div id="history-content" class="space-y-10 px-2"></div>
+            <div class="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-md px-6 z-50">
+                <button onclick="window.backToResult()" class="w-full bg-blue-950 text-white py-5 rounded-[30px] font-black hover:bg-blue-800 transition uppercase shadow-[0_15px_30px_rgba(0,0,0,0.3)] text-lg border-b-6 border-black text-white">Quay lại kết quả</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rules Modal -->
+    <div id="rules-overlay" class="hidden modal-overlay overflow-y-auto">
+        <div class="bg-blue-900 p-8 rounded-3xl border-4 border-white max-w-2xl shadow-2xl my-6 mx-auto text-white">
+            <h2 class="text-3xl font-extrabold text-yellow-400 mb-4 text-center uppercase border-b border-yellow-500/30 pb-3 font-black">Thể Lệ Chương Trình</h2>
+            <div class="space-y-3 text-lg leading-relaxed text-justify text-blue-50">
+                <p>Thí sinh chinh phục 20 câu hỏi Vật lí 11:</p>
+                <ul class="list-disc ml-6 space-y-1">
+                    <li>Câu 1-5: Nhận biết (5đ).</li>
+                    <li>Câu 6-10: Thông hiểu (7đ).</li>
+                    <li>Câu 11-20: Vận dụng (Tới 10đ).</li>
+                </ul>
+                <p>Thời gian: <strong>180 giây/câu</strong>. Trả lời sai sẽ lùi về mốc điểm an toàn.</p>
+                <p class="text-red-400 font-bold uppercase italic text-sm">Lưu ý bản THI: Chống gian lận sẽ tự động kết thúc bài thi nếu thí sinh rời khỏi màn hình hoặc mở tab khác.</p>
+            </div>
+            <button onclick="window.hideRules()" class="mt-6 w-full bg-yellow-500 text-blue-950 py-4 rounded-2xl font-black uppercase shadow-lg">Đã hiểu</button>
+        </div>
+    </div>
+
+    <div class="footer-copyright">
+        Bản quyền thuộc về thạc sĩ Nguyễn Thị Ánh Hà, THPT Nguyễn Trường Tộ, Thành phố Huế
+    </div>
+</div>
+
+<!-- All Script Module -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+    // --- CONFIG ---
+    const firebaseConfig = JSON.parse(__firebase_config);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'phys11-mil-final-v12';
+
+    // Shared Globals
+    window.cloudResults = [];
+    
+    let state = {
+        user: {}, questions: [], currentIndex: 0, startTime: 0, timer: 180, timerId: null, history: [],
+        lifelines: { '5050': true, 'audience': true, 'phone': true }, isGameActive: false,
+        selectedAnswer: null, currentTF: null, fireworksInt: null, mode: 'practice'
+    };
+
+    const BANK = {
+        mcq: [
+            { q: "Đại lượng nào sau đây của vật dao động điều hòa không thay đổi theo thời gian?", a: "tần số góc.", b: "vận tốc.", c: "gia tốc.", d: "li độ.", ans: "tần số góc.", hint: "Trong dao động điều hòa $x = A\\cos(\\omega t + \\varphi)$, các hằng số là $A, \\omega, \\varphi$.", level: 1 },
+            { q: "Vận tốc của vật dao động điều hòa có độ lớn cực đại khi vật đi qua", a: "vị trí cân bằng.", b: "vị trí biên dương.", c: "vị trí biên âm.", d: "vị trí có li độ $x = A/2$.", ans: "vị trí cân bằng.", hint: "Tại vị trí cân bằng, cơ năng hoàn toàn biến thành động năng nên vận tốc lớn nhất.", level: 1 },
+            { q: "Gia tốc của một vật dao động điều hòa luôn biến thiên như thế nào?", a: "ngược pha với li độ.", b: "cùng pha với li độ.", c: "trễ pha $\\pi/2$ so với vận tốc.", d: "sớm pha $\\pi/2$ so với li độ.", ans: "ngược pha với li độ.", hint: "Hệ thức $a = -\\omega^2 x$ cho thấy gia tốc tỉ lệ thuận và trái dấu với li độ.", level: 1 },
+            { q: "Trong dao động điều hòa, vận tốc biến thiên sớm pha bao nhiêu so với li độ?", a: "$\\pi/2$.", b: "$\\pi$.", c: "$0$.", d: "$2\\pi$.", ans: "$\\pi/2$.", hint: "Vận tốc là đạo hàm bậc nhất của li độ theo thời gian.", level: 1 },
+            { q: "Chu kì dao động của con lắc lò xo được tính theo công thức nào?", a: "$2\\pi\\sqrt{m/k}$.", b: "$2\\pi\\sqrt{k/m}$.", c: "$\\sqrt{m/k}$.", d: "$\\sqrt{k/m}$.", ans: "$2\\pi\\sqrt{m/k}$.", hint: "Chu kì con lắc lò xo tỉ lệ thuận với căn bậc hai của khối lượng vật nặng.", level: 2 },
+            { q: "Đồ thị li độ - thời gian của một dao động điều hòa là một đường", a: "hình sin.", b: "elip.", c: "parabol.", d: "thẳng.", ans: "hình sin.", hint: "Li độ biến thiên tuần hoàn theo hàm cosin của thời gian.", level: 1 },
+            { q: "Khi vật đi từ biên về vị trí cân bằng thì vật chuyển động như thế nào?", a: "nhanh dần.", b: "chậm dần.", c: "nhanh dần đều.", d: "chậm dần đều.", ans: "nhanh dần.", hint: "Tốc độ vật tăng dần từ 0 tại biên đến cực đại tại VTCB.", level: 2 },
+            { q: "Cơ năng của hệ dao động điều hòa được bảo toàn khi nào?", a: "bỏ qua mọi ma sát.", b: "vật ở vị trí biên.", c: "vật qua vị trí cân bằng.", d: "biên độ dao động rất lớn.", ans: "bỏ qua mọi ma sát.", hint: "Nếu không có lực cản, tổng động năng và thế năng là không đổi.", level: 2 },
+            { q: "Hiện tượng cộng hưởng xảy ra khi tần số ngoại lực cưỡng bức", a: "bằng tần số riêng của hệ.", b: "rất lớn so với tần số riêng.", c: "bằng không.", d: "bằng chu kì riêng.", ans: "bằng tần số riêng của hệ.", hint: "Khi cộng hưởng, biên độ dao động đạt giá trị cực đại.", level: 2 },
+            { q: "Động năng của vật dao động điều hòa biến thiên tuần hoàn với tần số bằng", a: "gấp đôi tần số li độ.", b: "tần số li độ.", c: "một nửa tần số li độ.", d: "không đổi.", ans: "gấp đôi tần số li độ.", hint: "Hàm bình phương cosin biến đổi thành cosin góc nhân đôi.", level: 3 },
+            { q: "Quãng đường vật đi được trong một chu kì dao động là bao nhiêu?", a: "4A.", b: "2A.", c: "A.", d: "8A.", ans: "4A.", hint: "Vật đi từ A đến -A rồi quay về A (2A + 2A = 4A).", level: 1 },
+            { q: "Pha ban đầu $\\varphi$ dùng để xác định trạng thái của vật lúc nào?", a: "thời điểm bắt đầu t = 0.", b: "thời điểm vật qua VTCB.", c: "thời điểm kết thúc bài.", d: "mọi thời điểm.", ans: "thời điểm bắt đầu t = 0.", hint: "Pha ban đầu xác định vị trí và chiều chuyển động lúc ban đầu.", level: 1 },
+            { q: "Đơn vị của chu kì T trong hệ SI là gì?", a: "giây (s).", b: "Hz.", c: "rad/s.", d: "m.", ans: "giây (s).", hint: "Chu kì là khoảng thời gian thực hiện 1 dao động.", level: 1 },
+            { q: "Gia tốc cực đại của vật đạt được tại vị trí nào sau đây?", a: "vị trí biên.", b: "vị trí cân bằng.", c: "mọi vị trí.", d: "điểm chính giữa.", ans: "vị trí biên.", hint: "Độ lớn gia tốc cực đại khi li độ đạt cực đại.", level: 2 },
+            { q: "Lực hồi phục tác dụng lên vật có biểu thức đại số là gì?", a: "$F = -kx$.", b: "$F = kx$.", c: "$F = mg$.", d: "$F = 0,5 kx^2$.", ans: "$F = -kx$.", hint: "Dấu trừ chỉ hướng lực luôn hướng về vị trí cân bằng.", level: 1 },
+            { q: "Chu kì con lắc đơn dao động nhỏ không phụ thuộc vào đại lượng nào?", a: "khối lượng vật nặng.", b: "chiều dài dây.", c: "gia tốc trọng trường.", d: "vị trí địa lí.", ans: "khối lượng vật nặng.", hint: "Công thức $T = 2\\pi\\sqrt{l/g}$ không chứa m.", level: 2 },
+            { q: "Khi cộng hưởng, đỉnh đồ thị cộng hưởng càng nhọn khi yếu tố nào xảy ra?", a: "lực cản nhỏ.", b: "ma sát lớn.", c: "tần số lớn.", d: "biên độ lực lớn.", ans: "lực cản nhỏ.", hint: "Lực cản môi trường càng nhỏ, biên độ cộng hưởng càng lớn.", level: 3 },
+            { q: "Vận tốc của vật dao động điều hòa đạt giá trị bằng không tại", a: "vị trí biên.", b: "vị trí cân bằng.", c: "mọi vị trí.", d: "điểm $x = A/2$.", ans: "vị trí biên.", hint: "Tại biên vật dừng lại để đổi chiều chuyển động.", level: 2 },
+            { q: "Thế năng của con lắc lò xo dao động điều hòa tỉ lệ thuận với", a: "bình phương li độ.", b: "li độ bậc nhất.", c: "vận tốc.", d: "khối lượng vật.", ans: "bình phương li độ.", hint: "$W_t = 0,5 kx^2$.", level: 2 },
+            { q: "Một hệ dao động duy trì là hệ được điều chỉnh như thế nào?", a: "bù năng lượng đúng bằng phần mất đi.", b: "tác dụng ngoại lực bất kì.", c: "bỏ qua mọi ma sát.", d: "kích thích biên độ cực đại.", ans: "bù năng lượng đúng bằng phần mất đi.", hint: "Duy trì biên độ mà không thay đổi tần số riêng của hệ.", level: 2 },
+            { q: "Hình chiếu chuyển động tròn đều lên một đường kính là dao động gì?", a: "dao động điều hòa.", b: "dao động tắt dần.", c: "chuyển động thẳng đều.", d: "cưỡng bức.", ans: "dao động điều hòa.", hint: "Mối liên hệ pha lượng giác cơ bản.", level: 1 },
+            { q: "Đồ thị vận tốc - li độ (v-x) trong dao động điều hòa là đường gì?", a: "elip.", b: "sin.", c: "thẳng.", d: "parabol.", ans: "elip.", hint: "Dựa vào hệ thức độc lập thời gian giữa x và v.", level: 3 },
+            { q: "Vật qua vị trí cân bằng có tốc độ bằng đại lượng nào sau đây?", a: "$\\omega A$.", b: "0.", c: "$\\omega^2 A$.", d: "$A$.", ans: "$\\omega A$.", hint: "Tốc độ cực đại đạt được tại O.", level: 2 },
+            { q: "Biên độ dao động cưỡng bức ổn định không phụ thuộc vào yếu tố nào?", a: "pha ban đầu ngoại lực.", b: "biên độ ngoại lực.", c: "tần số ngoại lực.", d: "lực cản.", ans: "pha ban đầu ngoại lực.", hint: "Pha không quyết định độ mạnh yếu của dao động cưỡng bức.", level: 3 }
+        ],
+        tf: [
+            { q: "Xét vật dao động điều hòa quanh vị trí cân bằng O trên trục Ox.", items: [ { t: "Vận tốc hướng về O khi vật đi từ biên về O.", r: true }, { t: "Gia tốc có độ lớn cực tiểu tại biên.", r: false }, { t: "Lực kéo về đổi chiều tại vị trí cân bằng.", r: true }, { t: "Vận tốc sớm pha $\\pi$ so với li độ.", r: false } ], hint: "Gia tốc đại cực đại ở biên. Vận tốc sớm pha $\\pi/2$.", level: 2 },
+            { q: "Về năng lượng của con lắc lò xo dao động nhỏ.", items: [ { t: "Thế năng tỉ lệ thuận với bình phương li độ.", r: true }, { t: "Động năng bằng cơ năng tại biên.", r: false }, { t: "Cơ năng bảo toàn nếu bỏ qua mọi ma sát.", r: true }, { t: "Thế năng tăng khi vật ra xa cân bằng.", r: true } ], hint: "Động năng bằng không ở biên.", level: 2 },
+            { q: "Nói về dao động cưỡng bức và cộng hưởng.", items: [ { t: "Dao động cưỡng bức f bằng f ngoại lực.", r: true }, { t: "Cộng hưởng xảy ra khi f lực bằng f riêng.", r: true }, { t: "Ma sát nhỏ thì cộng hưởng càng mạnh.", r: true }, { t: "Biên độ đạt giá trị lớn nhất khi cộng hưởng.", r: true } ], hint: "Đặc điểm cộng hưởng.", level: 3 },
+            { q: "Các đại lượng đặc trưng của dao động điều hòa.", items: [ { t: "Chu kì đo bằng giây, tần số đo bằng Hertz.", r: true }, { t: "Biên độ có thể nhận giá trị âm.", r: false }, { t: "Tần số góc có đơn vị đo là rad/s.", r: true }, { t: "Pha ban đầu phụ thuộc vào cách chọn mốc.", r: true } ], hint: "Biên độ luôn dương.", level: 1 },
+            { q: "Về chuyển động của con lắc đơn nhỏ.", items: [ { t: "Chu kì phụ thuộc vào chiều dài dây l.", r: true }, { t: "Lực kéo về là thành phần trọng lực.", r: true }, { t: "Vận tốc lớn nhất tại biên.", r: false }, { t: "T không phụ thuộc m.", r: true } ], hint: "Vận tốc đạt cực đại tại O.", level: 2 },
+            { q: "Pha của li độ, vận tốc và gia tốc trong dao động.", items: [ { t: "Vận tốc sớm pha $\\pi/2$ so li độ.", r: true }, { t: "Gia tốc ngược pha với li độ.", r: true }, { t: "Gia tốc sớm pha $\\pi/2$ so gia tốc.", r: false }, { t: "Li độ trễ pha $\\pi/2$ so vận tốc.", r: true } ], hint: "Thứ tự pha: x < v < a.", level: 3 },
+            { q: "Sự biến thiên năng lượng theo thời gian.", items: [ { t: "Động năng biến thiên tuần hoàn chu kì T/2.", r: true }, { t: "Tại biên thế năng đạt giá trị cực đại.", r: true }, { t: "Cơ năng là một hàm số tuần hoàn.", r: false }, { t: "Trong 1 chu kì có 4 lần Wd = Wt.", r: true } ], hint: "Cơ năng là hằng số.", level: 2 },
+            { q: "Dao động cưỡng bức dưới tác dụng ngoại lực tuần hoàn.", items: [ { t: "Tần số dao động cưỡng bức bằng tần số lực.", r: true }, { t: "Biên độ cưỡng bức phụ thuộc ma sát.", r: true }, { t: "Biên độ đạt cực đại khi tần số bằng nhau.", r: true }, { t: "Khi cộng hưởng, pha ban đầu ngoại lực bằng 0.", r: false } ], hint: "Pha không quyết định cộng hưởng.", level: 3 }
+        ],
+        short: [
+            { q: "f = 10 Hz. Tính chu kì T (giây).", a: "0,1", hint: "T = 1 / f.", level: 1 },
+            { q: "k = 100, m = 1. Tính tần số góc (rad/s).", a: "10", hint: "$\\omega = \\sqrt{k/m}$.", level: 2 },
+            { q: "Biên độ A = 10cm. Tính quãng đường 1 chu kì (cm).", a: "40", hint: "S = 4A.", level: 2 },
+            { q: "Vật đi từ biên -A đến A hết 0,2s. Tính chu kì T (s).", a: "0,4", hint: "T/2 = 0,2.", level: 3 },
+            { q: "x = 4cos(10t). Tại t = 0 li độ là bao nhiêu cm?", a: "4", hint: "Thay t = 0.", level: 1 },
+            { q: "v_max = 50, $\\omega$ = 10. Biên độ A là bao nhiêu cm?", a: "5", hint: "A = vmax/w.", level: 2 },
+            { q: "Chu kì T = 2s. Tính tần số f (Hz).", a: "0,5", hint: "f = 1/T.", level: 1 },
+            { q: "k = 50 N/m, li độ x = 0,1m. Lực kéo về là bao nhiêu N?", a: "5", hint: "F = kx.", level: 3 }
+        ]
+    };
+
+    // --- SYSTEM FUNCTIONS (GÁN VÀO WINDOW ĐỂ SỬA LỖI CLICK) ---
+    window.playSound = (id) => {
+        const el = document.getElementById('audio-' + id);
+        if (el) { el.currentTime = 0; el.play().catch(()=>{}); }
+    };
+
+    window.saveResultToCloud = async (data) => {
+        try {
+            const scoresCol = collection(db, 'artifacts', appId, 'public', 'data', 'results');
+            await addDoc(scoresCol, { ...data, timestamp: Date.now(), submittedAt: new Date().toLocaleString('vi-VN', {hour12: false}) });
+        } catch (e) { console.error("Cloud save failed:", e); }
+    };
+
+    window.initUser = () => {
+        const saved = localStorage.getItem('millionaire_physics_user');
+        if (saved) {
+            const u = JSON.parse(saved);
+            if (document.getElementById('input-name')) document.getElementById('input-name').value = u.name || '';
+            if (document.getElementById('input-sbd')) document.getElementById('input-sbd').value = u.sbd || '';
+            if (document.getElementById('input-class')) document.getElementById('input-class').value = u.class || '';
+            if (document.getElementById('input-school')) document.getElementById('input-school').value = u.school || '';
+        }
+    };
+
+    window.showRules = () => { window.playSound('click'); document.getElementById('rules-overlay').classList.remove('hidden'); };
+    window.hideRules = () => { document.getElementById('rules-overlay').classList.add('hidden'); };
+
+    window.showAdminLogin = () => { window.playSound('click'); document.getElementById('modal-admin-login').classList.remove('hidden'); document.getElementById('admin-pass-input').focus(); };
+    window.hideAdminLogin = () => { document.getElementById('modal-admin-login').classList.add('hidden'); document.getElementById('admin-pass-input').value = ""; };
+    window.checkAdminPass = () => { 
+        if(document.getElementById('admin-pass-input').value === "admin123") {
+            window.hideAdminLogin();
+            document.getElementById('screen-info').classList.add('hidden');
+            document.getElementById('screen-admin').classList.remove('hidden');
+            window.renderAdminTable();
+        } else alert("Mật khẩu không chính xác!");
+    };
+
+    window.renderAdminTable = () => {
+        const b = document.getElementById('admin-tbody'); b.innerHTML = '';
+        const data = window.cloudResults || [];
+        if (data.length === 0) { b.innerHTML = '<tr><td colspan="8" class="text-center p-8 italic text-gray-400">Đang tải dữ liệu thí sinh...</td></tr>'; return; }
+        data.sort((x,y)=>y.score-x.score || x.duration-y.duration).forEach((it, i) => {
+            b.innerHTML += `<tr class="border-b transition hover:bg-blue-50"><td>${i+1}</td><td class="font-bold text-blue-900">${it.name}</td><td>${it.sbd}</td><td>${it.class}</td><td>${it.school}</td><td class="font-black text-red-600">${it.score.toFixed(1)}</td><td>${it.duration}</td><td class="text-[10px] text-gray-500">${it.submittedAt}</td></tr>`;
+        });
+    };
+
+    window.exportToExcel = () => {
+        if (!window.cloudResults || window.cloudResults.length === 0) return alert("Không có dữ liệu!");
+        const sorted = [...window.cloudResults].sort((x,y)=>y.score-x.score || x.duration-y.duration);
+        const worksheetData = sorted.map((it, i) => ({
+            "Hạng": i + 1, "Họ Tên": it.name, "Số báo danh": it.sbd, "Lớp": it.class, "Trường": it.school, "Điểm": it.score, "Thời lượng làm bài (s)": it.duration, "Thời điểm nộp": it.submittedAt
+        }));
+        const ws = XLSX.utils.json_to_sheet(worksheetData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Kết quả");
+        XLSX.writeFile(wb, "ket_qua_vat_li_11.xlsx");
+    };
+
+    window.startMode = (mode) => {
+        state.mode = mode;
+        const n = document.getElementById('input-name').value.trim();
+        const s = document.getElementById('input-sbd').value.trim();
+        const c = document.getElementById('input-class').value.trim();
+        const sc = document.getElementById('input-school').value.trim();
+        if (!n || !s || !c || !sc) return alert("Vui lòng nhập đủ thông tin!");
+        state.user = { name: n, sbd: s, class: c, school: sc };
+        localStorage.setItem('millionaire_physics_user', JSON.stringify(state.user));
+        window.playSound('click');
+        
+        // Randomly pick 20 questions
+        const mcq = [...BANK.mcq].sort(()=>0.5-Math.random()).slice(0, 12);
+        const tf = [...BANK.tf].sort(()=>0.5-Math.random()).slice(0, 4);
+        const sh = [...BANK.short].sort(()=>0.5-Math.random()).slice(0, 4);
+        state.questions = [ ...mcq.map(x=>({...x, type:'mcq'})), ...tf.map(x=>({...x, type:'tf'})), ...sh.map(x=>({...x, type:'short'})) ];
+        
+        state.currentIndex = 0; state.history = []; state.isGameActive = true; state.startTime = Date.now();
+        state.lifelines = { '5050': true, 'audience': true, 'phone': true };
+        
+        document.getElementById('screen-info').classList.add('hidden');
+        document.getElementById('screen-game').classList.remove('hidden');
+        
+        // --- NÂNG CẤP ANTI-CHEAT ---
+        if (state.mode === 'exam') {
+            window.addEventListener('blur', window.onViolation, true);
+            document.addEventListener('visibilitychange', window.onViolation, true);
+        }
+        
+        updateHeader(); renderSidebar(); loadQuestion();
+    };
+
+    window.onViolation = () => {
+        if (state.isGameActive && state.mode === 'exam') {
+            state.isGameActive = false; 
+            window.removeEventListener('blur', window.onViolation, true);
+            document.removeEventListener('visibilitychange', window.onViolation, true);
+            
+            // Xóa vùng câu hỏi để chống tra cứu
+            document.getElementById('question-box').innerHTML = "<h2 class='text-red-500 text-2xl font-black uppercase'>BÀI THI BỊ HỦY DO VI PHẠM RỜI MÀN HÌNH</h2>";
+            
+            alert("VI PHẠM QUY CHẾ: Bạn đã rời khỏi màn hình thi! Kết quả sẽ được ghi nhận tại mốc an toàn.");
+            gameOver("Vi phạm quy chế rời màn hình");
+        }
+    };
+
+    const loadQuestion = () => {
+        if (state.currentIndex >= state.questions.length) return;
+        clearInterval(state.timerId); state.timer = 180;
+        document.getElementById('timer').innerText = state.timer + 's';
+        state.timerId = setInterval(() => { state.timer--; document.getElementById('timer').innerText = state.timer + 's'; if (state.timer <= 0) gameOver("Hết thời gian!"); }, 1000);
+        
+        const q = state.questions[state.currentIndex];
+        document.getElementById('question-text').innerHTML = `Câu ${state.currentIndex + 1}: ${q.q}`;
+        document.getElementById('help-hint-box').classList.add('hidden');
+        const container = document.getElementById('answers-container'); container.innerHTML = '';
+        document.getElementById('btn-stop').classList.toggle('hidden', state.currentIndex < 5);
+
+        if (q.type === 'mcq') {
+            [q.a, q.b, q.c, q.d].sort(()=>0.5-Math.random()).forEach((opt, idx) => {
+                const btn = document.createElement('div'); btn.className = 'option-btn'; btn.dataset.choice = opt;
+                btn.innerHTML = `<b>${String.fromCharCode(65+idx)}.</b> ${opt}`;
+                btn.onclick = () => { window.playSound('click'); document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); state.selectedAnswer = opt; };
+                container.appendChild(btn);
+            });
+            state.selectedAnswer = null;
+        } else if (q.type === 'tf') {
+            state.currentTF = Array(4).fill(null);
+            q.items.forEach((it, i) => {
+                const row = document.createElement('div'); row.className = 'col-span-1 md:col-span-2 flex justify-between items-center bg-blue-900/30 p-3 rounded-2xl border border-blue-400 gap-3';
+                row.innerHTML = `<div class="text-base flex-1 font-bold">${String.fromCharCode(97+i)}) ${it.t}</div><div class="flex space-x-1.5 shrink-0"><button class="tf-btn true">Đúng</button><button class="tf-btn false">Sai</button></div>`;
+                container.appendChild(row);
+                row.querySelector('.true').onclick = () => { window.playSound('click'); state.currentTF[i] = true; row.querySelector('.true').classList.remove('inactive'); row.querySelector('.false').classList.add('inactive'); };
+                row.querySelector('.false').onclick = () => { window.playSound('click'); state.currentTF[i] = false; row.querySelector('.false').classList.remove('inactive'); row.querySelector('.true').classList.add('inactive'); };
+            });
+        } else container.innerHTML = `<div class="w-full col-span-2 bg-blue-900/40 p-6 rounded-3xl text-center"><p class="text-sm text-yellow-300 mb-3 italic font-bold">Nhập đáp án (Dùng dấu phẩy cho số thập phân)</p><input type="text" id="short-input" maxlength="5" class="w-full max-w-xs text-center font-black text-3xl py-4 border-4 border-yellow-500" placeholder="..."></div>`;
+        
+        if (window.MathJax) MathJax.typesetPromise();
+        updateHeader(); renderSidebar();
+        document.querySelector('#screen-game .overflow-y-auto').scrollTop = 0;
+    };
+
+    window.submitAnswer = async () => {
+        const q = state.questions[state.currentIndex];
+        if (!q) return;
+        let isCorrect = false, snapshot = null;
+        if (q.type === 'mcq') {
+            if (!state.selectedAnswer) return alert("Vui lòng chọn đáp án!");
+            isCorrect = (state.selectedAnswer === q.ans); snapshot = state.selectedAnswer;
+        } else if (q.type === 'tf') {
+            if (state.currentTF.includes(null)) return alert("Vui lòng chọn đủ 4 ý!");
+            isCorrect = state.currentTF.every((v, i) => v === q.items[i].r); snapshot = [...state.currentTF];
+        } else {
+            const val = document.getElementById('short-input').value.trim();
+            if (!val) return alert("Vui lòng nhập kết quả!");
+            isCorrect = (val.replace(',', '.') == q.a.replace(',', '.')); snapshot = val;
+        }
+        state.history.push({ qData: JSON.parse(JSON.stringify(q)), userChoice: snapshot, isCorrect, index: state.currentIndex + 1 });
+        if (isCorrect) handleSuccess(); else gameOver(`Sai ở câu ${state.currentIndex + 1}`);
+    };
+
+    const handleSuccess = () => {
+        window.playSound('correct');
+        const cur = state.currentIndex + 1;
+        if (cur === 5) showMilestoneModal("Chúc mừng bạn vượt mốc câu 5! Bạn đã nắm chắc 5,0 điểm an toàn.");
+        else if (cur === 10) showMilestoneModal("Chúc mừng bạn vượt mốc câu 10! Bạn đã nắm chắc 7,0 điểm an toàn.");
+        else if (cur >= 20) gameOver("Thắng cuộc!", true);
+        else { state.currentIndex++; loadQuestion(); }
+    };
+
+    const showMilestoneModal = (msg) => {
+        clearInterval(state.timerId);
+        const modal = document.createElement('div'); modal.className = 'modal-overlay';
+        modal.innerHTML = `<div class="modal-content animate-pulse"><h3 class="text-2xl font-black text-yellow-400 mb-2 uppercase tracking-tighter">Mốc Quan Trọng!</h3><p class="mb-8 text-lg text-white font-bold">${msg}</p><div class="flex space-x-4"><button onclick="window.confirmStopAtMilestone(this)" id="btn-milestone-quit" class="flex-1 bg-red-600 py-3 rounded-xl font-bold text-white uppercase text-sm">Dừng chơi</button><button onclick="window.continueFromMilestone(this)" id="btn-milestone-cont" class="flex-1 bg-green-600 py-3 rounded-xl font-bold text-white uppercase text-sm">Tiếp tục</button></div></div>`;
+        document.body.appendChild(modal);
+    };
+
+    window.continueFromMilestone = (btn) => { btn.closest('.modal-overlay').remove(); state.currentIndex++; loadQuestion(); };
+    window.confirmStopAtMilestone = (btn) => { btn.closest('.modal-overlay').remove(); gameOver("Dừng chơi"); };
+
+    const gameOver = async (reason, win = false) => {
+        if (!win) window.playSound('wrong');
+        clearInterval(state.timerId); state.isGameActive = false;
+        window.removeEventListener('blur', window.onViolation, true);
+        document.removeEventListener('visibilitychange', window.onViolation, true);
+        
+        let fs = 0; const dur = Math.floor((Date.now() - state.startTime) / 1000);
+        if (win) fs = 10.0;
+        else if (reason.includes("Dừng")) { fs = state.currentIndex >= 10 ? 7.0 : (state.currentIndex >= 5 ? 5.0 : 0.0); }
+        else if (reason.includes("Vi phạm")) { fs = state.currentIndex >= 10 ? 7.0 : (state.currentIndex >= 5 ? 5.0 : 0.0); }
+        else { fs = state.currentIndex < 5 ? 0.0 : (state.currentIndex < 10 ? 5.0 : 7.0); }
+        
+        if (state.mode === 'exam') await window.saveResultToCloud({ name: state.user.name, sbd: state.user.sbd, class: state.user.class, school: state.user.school, score: fs, duration: dur });
+        
+        let rank = fs === 10 ? "Xuất sắc" : (fs >= 8 ? "Tốt" : (fs >= 5 ? "Khá" : "Cần cố gắng"));
+        document.getElementById('screen-game').classList.add('hidden');
+        document.getElementById('screen-result').classList.remove('hidden');
+        
+        document.getElementById('result-message').innerHTML = `
+            <div class="space-y-4">
+                <p class="text-xl font-bold text-yellow-400 uppercase border-b-2 border-white/20 pb-2">${reason.includes("Vi phạm") ? 'BÀI THI BỊ HỦY' : 'KẾT QUẢ'}</p>
+                <p class="text-lg">Chúc mừng Triệu phú tri thức <b>${state.user.name}</b></p>
+                <div class="text-xs opacity-80 bg-black/30 py-3 rounded-2xl">SBD: ${state.user.sbd} | Lớp: ${state.user.class} | Trường: ${state.user.school}</div>
+                <div class="py-4">
+                    <p class="text-base text-blue-200">Đã hoàn thành với số điểm</p>
+                    <p class="text-[95px] font-black text-yellow-400 drop-shadow-2xl leading-none my-2">${fs.toFixed(1)}</p>
+                    <p class="text-3xl font-black text-green-400 uppercase tracking-widest">Xếp loại: ${rank}</p>
+                </div>
+                <p class="mt-2 italic text-xs text-blue-100">"Bạn có thể làm lại để khẳng định đẳng cấp của mình"</p>
+            </div>`;
+        if (fs >= 5) startFireworks();
+        window.scrollTo(0, 0);
+    };
+
+    window.showHistory = () => {
+        window.playSound('click');
+        document.getElementById('screen-result').classList.add('hidden'); document.getElementById('screen-history').classList.remove('hidden');
+        const cont = document.getElementById('history-content'); cont.innerHTML = '';
+        state.history.forEach(h => {
+            const card = document.createElement('div'); card.className = `history-card border-l-[15px] ${h.isCorrect ? 'border-green-500' : 'border-red-500'}`;
+            let html = `<p class="font-black text-blue-900 text-xl mb-4">Câu ${h.index}: ${h.qData.q}</p>`;
+            if (h.qData.type === 'mcq') {
+                [h.qData.a, h.qData.b, h.qData.c, h.qData.d].forEach(opt => {
+                    let cl = opt === h.userChoice ? (h.isCorrect ? "choice-correct" : "choice-wrong") : (opt === h.qData.ans ? "choice-correct opacity-40" : "choice-neutral");
+                    html += `<div class="${cl}">${opt} ${opt === h.userChoice ? (h.isCorrect ? '✓' : '✗') : ''}</div>`;
+                });
+            } else if (h.qData.type === 'tf') {
+                h.qData.items.forEach((it, i) => {
+                    const cr = h.userChoice[i] === it.r;
+                    html += `<div class="flex justify-between items-center p-3 border-b ${cr?'text-green-700 bg-green-50':'text-red-700 bg-red-50'}"><span>${String.fromCharCode(97+i)}) ${it.t}</span><b>${it.r?'ĐÚNG':'SAI'} | Chọn: ${h.userChoice[i]?'Đ':'S'}</b></div>`;
+                });
+            } else html += `<div class="${h.isCorrect?'choice-correct':'choice-wrong'}">Chọn: ${h.userChoice} | Đáp án: ${h.qData.a}</div>`;
+            html += `<div class="explanation-box"><b>Phân tích khoa học:</b> ${h.qData.hint}</div>`;
+            card.innerHTML = html; cont.appendChild(card);
+        });
+        if (window.MathJax) MathJax.typesetPromise();
+        window.scrollTo(0, 0);
+    };
+
+    window.backToHome = () => { stopFireworks(); document.querySelectorAll('.screen-container, #screen-game, #screen-result, #screen-history').forEach(s => s.classList.add('hidden')); document.getElementById('screen-info').classList.remove('hidden'); window.initUser(); };
+    window.backToResult = () => { window.playSound('click'); document.getElementById('screen-history').classList.add('hidden'); document.getElementById('screen-result').classList.remove('hidden'); };
+    window.resetGame = () => { window.backToHome(); };
+    window.confirmQuit = () => { if(confirm("Dừng chơi để bảo toàn điểm?")) gameOver("Dừng bài"); };
+
+    window.use5050 = () => { if (!state.lifelines['5050'] || state.currentIndex >= 12 || state.questions[state.currentIndex].type !== 'mcq') return; state.lifelines['5050'] = false; const q = state.questions[state.currentIndex]; Array.from(document.querySelectorAll('.option-btn')).filter(b => b.dataset.choice !== q.ans).sort(()=>0.5-Math.random()).slice(0, 2).forEach(b => b.classList.add('hidden-option')); updateHeader(); };
+    window.useAudience = () => { if(!state.lifelines['audience']) return; state.lifelines['audience'] = false; document.getElementById('help-hint-box').classList.remove('hidden'); document.getElementById('help-hint-box').innerHTML = `<b>Khán giả gợi ý:</b> Đáp án có vẻ là "<i>${state.questions[state.currentIndex].ans}</i>" (89%)`; updateHeader(); };
+    window.usePhone = () => { if(!state.lifelines['phone']) return; state.lifelines['phone'] = false; document.getElementById('help-hint-box').classList.remove('hidden'); document.getElementById('help-hint-box').innerHTML = `<b>Người thân khuyên:</b> "Hãy chú ý kiến thức: ${state.questions[state.currentIndex].hint}"`; updateHeader(); };
+
+    const updateHeader = () => { const m = state.mode==='exam'?'[THI]':'[LUYỆN]'; document.getElementById('user-display').innerHTML = `<span class="${state.mode==='exam'?'text-red-400':'text-green-400'} font-black mr-2">${m}</span> ${state.user.name}`; document.getElementById('help-5050').style.opacity = state.lifelines['5050']?1:0.3; document.getElementById('help-audience').style.opacity = state.lifelines['audience']?1:0.3; document.getElementById('help-phone').style.opacity = state.lifelines['phone']?1:0.3; };
+    const renderSidebar = () => {
+        const sb = document.getElementById('scoreboard-sidebar'); sb.innerHTML = '';
+        const mstones = Array.from({length: 20}, (_, i) => {
+            const qNum = 20 - i;
+            let pts = qNum <= 5 ? qNum : (qNum <= 10 ? 5 + (qNum - 5) * 0.4 : 7 + (qNum - 10) * 0.3);
+            return { q: qNum, pts: parseFloat(pts.toFixed(2)), label: `${pts.toFixed(1)} đ`, special: qNum === 5 ? 'milestone-5' : (qNum === 10 ? 'milestone-10' : (qNum === 20 ? 'milestone-20' : '')) };
+        });
+        mstones.forEach(m => {
+            const d = document.createElement('div'); d.className = `milestone-item ${m.special||''} ${m.q===state.currentIndex+1?'milestone-active':''}`;
+            d.innerHTML = `<span>Câu ${m.q}</span><span>${m.label}</span>`; sb.appendChild(d);
+        });
+    };
+
+    const startFireworks = () => {
+        const can = document.getElementById('fireworks-canvas'); can.style.display = 'block'; const ctx = can.getContext('2d');
+        can.width = window.innerWidth; can.height = window.innerHeight; let ps = [];
+        state.fireworksInt = setInterval(() => { for(let i=0;i<40;i++) ps.push({x:Math.random()*can.width,y:Math.random()*can.height*0.4,vx:(Math.random()-0.5)*15,vy:(Math.random()-0.5)*15,s:Math.random()*4,c:`hsl(${Math.random()*360},100%,50%)`,l:80}); }, 500);
+        const loop = () => { if(can.style.display==='none') return; ctx.fillStyle='rgba(0,0,0,0.2)'; ctx.fillRect(0,0,can.width,can.height); ps.forEach((p,i)=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=0.15; p.l--; ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(p.x,p.y,p.s,0,7); ctx.fill(); if(p.l<=0) ps.splice(i,1); }); requestAnimationFrame(loop); };
+        loop();
+    };
+    const stopFireworks = () => { clearInterval(state.fireworksInt); document.getElementById('fireworks-canvas').style.display = 'none'; };
+
+    // Initial Trigger
+    onAuthStateChanged(auth, (u) => { if(u) window.initUser(); });
+</script>
+
+</body>
+</html>
