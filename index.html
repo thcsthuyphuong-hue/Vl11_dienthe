@@ -1,726 +1,117 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ai là triệu phú - Vật lí 11 - Bài 20: Điện thế (Premium V3)</title>
-    
-    <script>
-        window.MathJax = {
-            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], processEscapes: true },
-            options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'] }
-        };
-    </script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    
-    <style>
-        :root {
-            --bg: #020617;
-            --gold: #f59e0b;
-            --blue-vtv: #1e3a8a;
-            --correct: #22c55e;
-            --wrong: #ef4444;
-            --glass: rgba(255, 255, 255, 0.1);
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: var(--bg); color: #f8fafc; overflow-x: hidden; min-height: 100vh; }
-
-        /* HEADER TRÊN CÙNG MỘT HÀNG */
-        header {
-            background: linear-gradient(90deg, #1e293b, #0f172a);
-            padding: 8px 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 3px solid var(--gold);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            gap: 15px;
-        }
-        .header-left { display: flex; gap: 15px; align-items: center; }
-        .header-item { font-size: 13px; white-space: nowrap; }
-        .timer-val { font-size: 20px; color: var(--gold); font-weight: bold; }
-        .q-info { font-size: 16px; font-weight: bold; color: var(--gold); background: rgba(245, 158, 11, 0.1); padding: 4px 10px; border-radius: 15px; border: 1px solid var(--gold); }
-        .score-info { color: #60a5fa; font-weight: bold; font-size: 16px; }
-
-        /* GIAO DIỆN CHÍNH */
-        main { display: flex; padding: 10px; gap: 15px; max-width: 1400px; margin: 0 auto; }
-        #game-view { flex: 1; min-height: 80vh; display: flex; flex-direction: column; align-items: center; }
-        
-        aside { 
-            width: 80px; background: rgba(0,0,0,0.5); border-radius: 10px; padding: 5px;
-            display: flex; flex-direction: column-reverse; gap: 2px;
-        }
-        .score-step { 
-            font-size: 10px; text-align: center; padding: 4px; border-radius: 4px; background: #1e293b; color: #94a3b8;
-        }
-        .score-step.active { background: var(--gold); color: #000; font-weight: bold; transform: scale(1.1); }
-        .m5 { color: #fde047; border: 1px solid #fde047; }
-        .m10 { color: #60a5fa; border: 1px solid #60a5fa; }
-        .m20 { color: #f87171; border: 1px solid #f87171; }
-
-        /* MODAL THÔNG BÁO TÙY CHỈNH */
-        #custom-modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center;
-        }
-        .modal-content {
-            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
-            padding: 40px; border-radius: 20px; border: 5px solid var(--gold);
-            text-align: center; max-width: 650px; width: 90%;
-            box-shadow: 0 0 50px rgba(245, 158, 11, 0.5);
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .modal-content.fail { background: linear-gradient(135deg, #7f1d1d, #ef4444); border-color: white; }
-        .modal-content.success-milestone { background: linear-gradient(135deg, #065f46, #10b981); border-color: #fbbf24; }
-
-        @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .modal-title { font-size: 36px; font-weight: bold; margin-bottom: 20px; color: white; text-shadow: 2px 2px #000; }
-        .modal-msg { font-size: 22px; margin-bottom: 30px; line-height: 1.5; color: #fef08a; }
-
-        /* SCREENS */
-        .screen { display: none; width: 100%; }
-        .screen.active { display: flex; flex-direction: column; align-items: center; }
-
-        /* MÀN HÌNH CHÀO */
-        .card-auth { background: var(--glass); padding: 30px; border-radius: 20px; border: 2px solid var(--gold); width: 100%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .input-group { margin-bottom: 12px; text-align: left; }
-        .input-group label { display: block; margin-bottom: 4px; color: var(--gold); font-size: 14px; font-weight: bold; }
-        input { width: 100%; padding: 12px; border-radius: 8px; border: none; font-size: 16px; background: #f8fafc; color: #020617; }
-        .warning-text { font-size: 13px; color: #f87171; margin-top: 10px; font-style: italic; font-weight: bold; text-align: center; }
-
-        /* THỂ LỆ ẤN TƯỢNG */
-        .rules-box { 
-            background: linear-gradient(145deg, #0f172a, #1e3a8a); color: #f8fafc; padding: 40px; 
-            border-radius: 30px; text-align: left; max-width: 800px; border: 3px solid var(--gold);
-            box-shadow: 0 0 40px rgba(245, 158, 11, 0.3);
-        }
-        .rules-box h2 { color: var(--gold); text-align: center; margin-bottom: 25px; font-size: 32px; text-transform: uppercase; border-bottom: 2px solid var(--gold); padding-bottom: 10px; }
-        .rules-box p, .rules-box li { font-size: 18px; margin-bottom: 12px; line-height: 1.6; }
-        .rules-box b { color: var(--gold); }
-
-        /* CÂU HỎI */
-        .q-card { width: 100%; max-width: 900px; margin-top: 10px; }
-        .q-text { 
-            background: linear-gradient(90deg, #1e40af, #1e3a8a); padding: 25px; 
-            border-radius: 50px; border: 3px solid var(--gold); font-size: 22px; 
-            margin-bottom: 25px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            min-height: 100px; display: flex; align-items: center; justify-content: center;
-        }
-        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .btn-opt { 
-            background: rgba(30, 58, 138, 0.8); border: 2px solid #3b82f6; 
-            padding: 15px 20px; border-radius: 40px; color: white; cursor: pointer; 
-            font-size: 18px; text-align: left; transition: 0.3s;
-        }
-        .btn-opt:hover:not(:disabled) { background: var(--gold); color: black; border-color: white; transform: scale(1.02); }
-        .btn-opt.correct { background: var(--correct) !important; border-color: white; color: white; }
-        .btn-opt.wrong { background: var(--wrong) !important; border-color: white; color: white; }
-
-        /* LỊCH SỬ CHI TIẾT */
-        .history-list { text-align: left; width: 100%; max-width: 1000px; margin-top: 30px; }
-        .history-card { background: white; color: #1e293b; padding: 25px; border-radius: 15px; margin-bottom: 25px; border-left: 15px solid #cbd5e1; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-        .history-card.is-ok { border-left-color: var(--correct); }
-        .history-card.is-fail { border-left-color: var(--wrong); }
-        .history-card .q-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #1e3a8a; }
-        .history-card .user-choice { padding: 8px; border-radius: 5px; margin: 5px 0; font-weight: bold; }
-        .history-card .user-choice.right { background: #dcfce7; color: #166534; }
-        .history-card .user-choice.wrong { background: #fee2e2; color: #991b1b; }
-        .history-card .correct-ans { color: #166534; font-weight: bold; margin: 5px 0; }
-        .explain-box { background: #f8fafc; padding: 15px; border-radius: 10px; margin-top: 15px; font-size: 15px; border: 1px dashed #94a3b8; color: #475569; line-height: 1.5; }
-
-        /* NÚT CHUNG */
-        .btn { padding: 12px 25px; border-radius: 30px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin: 5px; transition: 0.3s; font-size: 14px; }
-        .btn-gold { background: var(--gold); color: black; box-shadow: 0 4px #b45309; }
-        .btn-gold:active { transform: translateY(2px); box-shadow: 0 2px #b45309; }
-        .btn-blue { background: #3b82f6; color: white; box-shadow: 0 4px #1d4ed8; }
-        .btn-blue:active { transform: translateY(2px); box-shadow: 0 2px #1d4ed8; }
-        .btn-practice { background: #8b5cf6; color: white; box-shadow: 0 4px #6d28d9; }
-        .btn-practice:active { transform: translateY(2px); box-shadow: 0 2px #6d28d9; }
-        .btn-red { background: var(--wrong); color: white; box-shadow: 0 4px #991b1b; }
-
-        footer { text-align: center; padding: 15px; font-size: 12px; color: #64748b; font-style: italic; }
-        canvas { position: fixed; top:0; left:0; pointer-events: none; z-index: 1500; }
-
-        @media (max-width: 768px) {
-            .options-grid { grid-template-columns: 1fr; }
-            header { flex-wrap: wrap; justify-content: space-around; height: auto; padding: 10px; }
-            .header-left { width: 100%; justify-content: center; margin-bottom: 5px; }
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Ai là triệu phú - Điện thế</title>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+body{font-family:Arial;margin:0;background:#0b1c3f;color:white}
+.container{padding:10px}
+.header{display:flex;justify-content:space-between}
+.scoreboard{position:absolute;right:0;top:60px;width:120px}
+.question{margin-top:20px;font-size:20px}
+.answers button{display:block;width:100%;margin:5px;padding:10px;font-size:16px}
+.correct{background:green}
+.wrong{background:red}
+</style>
 </head>
+
 <body>
 
-<header id="top-bar" style="display:none;">
-    <div class="header-left">
-        <div class="q-info">Câu <span id="h-idx">1</span>/20</div>
-        <div class="score-info">Điểm: <span id="h-score">0.0</span></div>
-        <div class="header-item"><b>Thí sinh:</b> <span id="h-name"></span> (<span id="h-sbd"></span>)</div>
-    </div>
-    <div class="header-item timer-val">⏳ <span id="timer-sec">180</span>s</div>
-    <div class="help-group" style="display:flex; gap:5px;">
-        <button class="help-btn btn-blue btn" style="padding: 5px 12px; margin:0;" id="h-5050">50:50</button>
-        <button class="help-btn btn-blue btn" style="padding: 5px 12px; margin:0;" id="h-call">📞</button>
-        <button class="help-btn btn-blue btn" style="padding: 5px 12px; margin:0;" id="h-aud">👥</button>
-    </div>
-</header>
-
-<main>
-    <div id="game-view">
-        <!-- AUTH SCREEN -->
-        <div id="screen-auth" class="screen active">
-            <h1 style="color: var(--gold); font-size: 45px; margin-bottom: 10px; text-shadow: 3px 3px #000; text-align:center;">AI LÀ TRIỆU PHÚ</h1>
-            <h2 style="margin-bottom: 25px; color: #94a3b8; text-align:center;">VẬT LÍ 11 - BÀI 20: ĐIỆN THẾ</h2>
-            <div class="card-auth">
-                <div class="input-group"><label>Họ và tên</label><input type="text" id="in-name" placeholder="Ví dụ: Nguyễn Văn A"></div>
-                <div class="input-group"><label>Số báo danh</label><input type="text" id="in-sbd" placeholder="Ví dụ: 2025-01"></div>
-                <div class="input-group"><label>Lớp</label><input type="text" id="in-class" placeholder="11A..."></div>
-                <div class="input-group"><label>Trường THPT</label><input type="text" id="in-school" placeholder="Tên trường..."></div>
-                
-                <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin-top: 15px;">
-                    <button class="btn btn-blue" id="btn-rules">Thể lệ</button>
-                    <button class="btn btn-practice" id="btn-practice">Luyện tập</button>
-                    <button class="btn btn-gold" id="btn-start">Ngồi vào ghế nóng</button>
-                </div>
-                <div class="warning-text">Lưu ý: Nếu bạn rời khỏi màn hình "Ghế nóng" (hoặc mở cửa sổ khác), cuộc chơi sẽ kết thúc!</div>
-            </div>
-        </div>
-
-        <!-- RULES SCREEN -->
-        <div id="screen-rules" class="screen">
-            <div class="rules-box">
-                <h2>THỂ LỆ TRÒ CHƠI AI LÀ TRIỆU PHÚ</h2>
-                <p>Chào mừng các em đến với trò chơi <b>“Ai là triệu phú – Vật lí 11”</b>.</p>
-                <p>Người chơi sẽ lần lượt chinh phục <b>20 câu hỏi</b> với độ khó tăng dần:</p>
-                <ul>
-                    <li><b>Câu 1 - 5:</b> Mức độ nhận biết (Mốc <b>5 điểm</b>)</li>
-                    <li><b>Câu 6 - 10:</b> Mức độ nhận biết, thông hiểu (Mốc <b>7 điểm</b>)</li>
-                    <li><b>Câu 11 - 20:</b> Mức độ hiểu, vận dụng (Tối đa <b>10 điểm</b>)</li>
-                </ul>
-                <p><b>Luật chơi quan trọng:</b></p>
-                <ul>
-                    <li>Mỗi câu hỏi có tối đa <b>180 giây</b> để suy nghĩ.</li>
-                    <li>Có 3 quyền trợ giúp: <b>50:50</b> (câu 1-12), <b>Gọi điện</b>, <b>Khán giả</b>.</li>
-                    <li><b>Chế độ Ghế nóng:</b> Hệ thống tự động nộp bài nếu bạn thoát Tab hoặc chuyển ứng dụng.</li>
-                    <li><b>Chế độ Luyện tập:</b> Bạn có thể thoải mái tra cứu thông tin mà không bị kết thúc bài làm.</li>
-                </ul>
-                <div style="text-align: center; margin-top: 30px;">
-                    <button class="btn btn-gold" id="btn-back-home" style="font-size: 18px; padding: 15px 40px;">Đã hiểu, quay lại</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- PLAY SCREEN -->
-        <div id="screen-play" class="screen">
-            <div class="q-card">
-                <div id="q-text" class="q-text">Đang tải câu hỏi...</div>
-                
-                <div id="area-mcq" class="options-grid"></div>
-
-                <div id="area-tf" style="display:none; width: 100%;">
-                    <div id="tf-rows"></div>
-                    <button class="btn btn-gold" id="btn-submit-tf" disabled style="width:100%; margin:20px 0; font-size: 20px;">Gửi kết quả</button>
-                </div>
-
-                <div id="area-sa" style="display:none; width: 100%; max-width: 500px; text-align: center;">
-                    <p style="margin-bottom: 15px; font-style: italic;">Nhập kết quả không quá 4 kí tự (VD: 2,5 hoặc 1000)</p>
-                    <input type="text" id="sa-input" style="font-size: 35px; text-align: center; border: 4px solid var(--gold); border-radius: 15px; background: white; color: black; width: 100%;">
-                    <button class="btn btn-gold" id="btn-submit-sa" style="margin-top: 20px; width:100%; font-size: 20px;">Xác nhận đáp án</button>
-                </div>
-            </div>
-            <button class="btn btn-red" id="btn-stop" style="margin-top: 30px; display: none;">Dừng cuộc chơi</button>
-        </div>
-
-        <!-- RESULT SCREEN -->
-        <div id="screen-result" class="screen">
-            <h1 id="res-title" style="font-size: 45px; color: var(--gold); margin-bottom: 10px;">KẾT QUẢ PHẦN THI</h1>
-            <div id="res-summary" style="font-size: 24px; margin: 20px; line-height: 1.6; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 1px solid var(--gold);"></div>
-            <div style="display:flex; gap: 15px;">
-                <button class="btn btn-blue" id="btn-history" style="padding: 15px 30px;">Lịch sử làm bài</button>
-                <button class="btn btn-gold" id="btn-restart" style="padding: 15px 30px;">Làm lại từ đầu</button>
-            </div>
-            <div id="history-panel" style="display:none;" class="history-list"></div>
-        </div>
-    </div>
-
-    <!-- SIDEBAR SCOREBOARD -->
-    <aside id="scoreboard"></aside>
-</main>
-
-<!-- CUSTOM MODAL -->
-<div id="custom-modal">
-    <div class="modal-content" id="modal-container">
-        <div id="modal-title" class="modal-title">THÔNG BÁO</div>
-        <div id="modal-msg" class="modal-msg">Nội dung...</div>
-        <button class="btn btn-gold" id="btn-modal-close" style="font-size: 20px; padding: 15px 50px;">TIẾP TỤC</button>
-    </div>
+<div id="start">
+<h2>AI LÀ TRIỆU PHÚ - ĐIỆN THẾ</h2>
+<input id="name" placeholder="Họ tên"><br>
+<input id="sbd" placeholder="SBD"><br>
+<button onclick="startGame()">Vào ghế nóng</button>
 </div>
 
-<canvas id="canvas-fw"></canvas>
+<div id="game" style="display:none">
+<div class="header">
+<div id="info"></div>
+<div id="timer"></div>
+</div>
 
-<footer>
-    Bản quyền thuộc về Thạc sĩ Nguyễn Thị Ánh Hà, THPT Nguyễn Trường Tộ, Thành phố Huế
-</footer>
-
-<audio id="snd-click" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
-<audio id="snd-win" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"></audio>
-<audio id="snd-fail" src="https://assets.mixkit.co/active_storage/sfx/951/951-preview.mp3"></audio>
+<div class="question" id="question"></div>
+<div class="answers" id="answers"></div>
+</div>
 
 <script>
-/** * NGÂN HÀNG 40 CÂU HỎI (TRÍCH XUẤT NGUYÊN VĂN)
- */
-const FULL_BANK = {
-    mcq: [
-        { q: "Điện thế tại một điểm trong điện trường là đại lượng đặc trưng cho điện trường về", a: ["phương diện tác dụng lực.", "khả năng sinh công của điện trường.", "phương diện dự trữ năng lượng.", "mức độ mạnh yếu của điện trường."], c: 1, ex: "Câu 20.1. Điện thế đặc trưng cho khả năng sinh công của điện trường tại một điểm. Cường độ điện trường mới đặc trưng cho phương diện tác dụng lực." },
-        { q: "Trong hệ SI, đơn vị của điện thế là", a: ["joule (J).", "volt (V).", "ampere (A).", "coulomb (C)."], c: 1, ex: "Câu 20.2. Đơn vị đo điện thế là Vôn (V)." },
-        { q: "Hiệu điện thế giữa hai điểm M và N trong điện trường được xác định bằng biểu thức", a: ["$U_{MN} = V_M - V_N$", "$U_{MN} = V_M + V_N$", "$U_{MN} = V_N - V_M$", "$U_{MN} = V_M / V_N$"], c: 0, ex: "Câu 20.3. Hiệu điện thế giữa hai điểm M và N bằng hiệu các điện thế tại M và N." },
-        { q: "Điện thế tại điểm M trong điện trường được xác định bởi công thức", a: ["$V_M = A_{M\\infty} / q$", "$V_M = A_{M\\infty} \\cdot q$", "$V_M = q / A_{M\\infty}$", "$V_M = E / q$"], c: 0, ex: "Câu 20.4. Điện thế tại M bằng công dịch chuyển điện tích q từ M ra vô cực chia cho giá trị q." },
-        { q: "Thế năng của một điện tích q tại một điểm trong điện trường tỉ lệ thuận với", a: ["bình phương khoảng cách.", "giá trị của điện tích q.", "cường độ điện trường.", "vận tốc của điện tích."], c: 1, ex: "Câu 20.7. Thế năng điện $W = qV$, tỉ lệ thuận với giá trị điện tích q." },
-        { q: "Khi dịch chuyển điện tích dương q từ M có điện thế $V_M$ đến N có điện thế $V_N$, công lực điện là", a: ["$A_{MN} = q(V_N - V_M)$", "$A_{MN} = q(V_M - V_N)$", "$A_{MN} = q / (V_M - V_N)$", "$A_{MN} = (V_M - V_N) / q$"], c: 1, ex: "Câu 20.5. Công $A_{MN} = q(V_M - V_N)$." },
-        { q: "Điện thế là một đại lượng", a: ["véc tơ.", "luôn dương.", "luôn âm.", "vô hướng, có thể dương, âm hoặc bằng không."], c: 3, ex: "Câu 20.8. Điện thế là đại lượng đại số vô hướng, phụ thuộc vào việc chọn mốc và dấu của nguồn điện trường." },
-        { q: "Cường độ điện trường đều giữa 2 bản cách nhau 2 cm là 5000 V/m. Hiệu điện thế giữa 2 bản là", a: ["100 V.", "2500 V.", "10 V.", "10000 V."], c: 0, ex: "Câu 20.16. $U = E \\cdot d = 5000 \\cdot 0,02 = 100$ V." },
-        { q: "Tại điểm M có điện thế 100 V, thế năng của điện tích $2 \\mu C$ tại đó là", a: ["$2 \\cdot 10^{-4}$ J.", "200 J.", "$2 \\cdot 10^{-6}$ J.", "0,02 J."], c: 0, ex: "Câu 20.10. $W = qV = 2 \\cdot 10^{-6} \\cdot 100 = 2 \\cdot 10^{-4}$ J." },
-        { q: "Trong điện trường đều giữa 2 bản phẳng song song, công của lực điện chỉ phụ thuộc vào", a: ["quãng đường đi.", "hiệu điện thế và điện tích.", "vận tốc vật.", "thời gian bay."], c: 1, ex: "Câu 20.11. Công của lực điện $A = qU$, không phụ thuộc hình dạng đường đi." },
-        { q: "Đơn vị của cường độ điện trường có thể tính theo đơn vị hiệu điện thế là", a: ["V/m.", "V.m.", "J/C.", "N/C."], c: 0, ex: "Câu 20.12. Từ công thức $E = U/d$." },
-        { q: "Nếu điện thế tại mốc tọa độ được chọn bằng không, điểm có điện thế dương là nơi", a: ["có cường độ điện trường nhỏ.", "có khả năng sinh công dương khi đẩy q dương ra vô cực.", "có điện tích âm.", "có khoảng cách vô hạn."], c: 1, ex: "Vì $V = A_{M\\infty}/q$." },
-        { q: "Chọn phát biểu ĐÚNG. Hiệu điện thế giữa hai điểm M, N trong điện trường", a: ["luôn luôn dương.", "phụ thuộc điện tích dịch chuyển.", "đặc trưng cho khả năng sinh công khi dịch chuyển một đơn vị điện tích.", "phụ thuộc hình dạng đường đi."], c: 2, ex: "Câu 20.9. Theo định nghĩa hiệu điện thế." },
-        { q: "Công của lực điện trường dịch chuyển điện tích $10^{-6}$ C từ M đến N là $2 \\cdot 10^{-3}$ J. Hiệu điện thế $U_{MN}$ là", a: ["200 V.", "2000 V.", "0,5 V.", "2 V."], c: 1, ex: "Câu 20.13. $U = A/q = 2 \\cdot 10^{-3} / 10^{-6} = 2000$ V." },
-        { q: "Một electron dịch chuyển giữa 2 điểm có hiệu điện thế $U = 100$ V. Công của lực điện thực hiện là", a: ["$-1,6 \\cdot 10^{-17}$ J.", "$1,6 \\cdot 10^{-17}$ J.", "$1,6 \\cdot 10^{-19}$ J.", "$-100$ J."], c: 0, ex: "Câu 20.14. $A = qU = -1,6 \\cdot 10^{-19} \\cdot 100$." },
-        { q: "Nếu điện thế tại M là 10 V và tại N là 4 V thì $U_{MN}$ bằng", a: ["14 V.", "6 V.", "-6 V.", "40 V."], c: 1, ex: "Câu 20.15. $10 - 4 = 6$ V." },
-        { q: "Điện thế tại gốc tọa độ thường có giá trị bằng", a: ["vô cùng.", "không.", "giá trị cực đại.", "1 V."], c: 1, ex: "Câu 20.17. Thường chọn gốc làm mốc điện thế." },
-        { q: "Dịch chuyển một điện tích dọc theo đường cong kín trong điện trường thì công của lực điện bằng", a: ["cực đại.", "phụ thuộc độ dài đường cong.", "không.", "phụ thuộc thời gian."], c: 2, ex: "Câu 20.18. Lực điện là lực thế." },
-        { q: "Đặc điểm của các điểm nằm trên cùng một mặt đẳng thế là chúng có cùng", a: ["cường độ điện trường.", "điện tích.", "véc tơ cường độ điện trường.", "điện thế."], c: 3, ex: "Câu 20.19. Theo định nghĩa mặt đẳng thế." },
-        { q: "Hiệu điện thế giữa hai điểm bất kì trong điện trường", a: ["không phụ thuộc mốc điện thế.", "thay đổi khi mốc thay đổi.", "luôn bằng không nếu chọn mốc ở vô cực.", "bằng điện thế tại điểm đó."], c: 0, ex: "Câu 20.20. Hiệu điện thế là giá trị tương đối giữa 2 điểm." },
-        { q: "Tăng điện tích dịch chuyển lên 2 lần và giữ nguyên hiệu điện thế thì công của lực điện sẽ", a: ["giữ nguyên.", "tăng lên 2 lần.", "giảm đi 2 lần.", "tăng lên 4 lần."], c: 1, ex: "Câu 20.21. $A = qU$." },
-        { q: "Một proton bay từ M ($V_M = 500$ V) đến N ($V_N = 200$ V). Độ biến thiên động năng của nó là", a: ["$4,8 \\cdot 10^{-17}$ J.", "$-4,8 \\cdot 10^{-17}$ J.", "300 J.", "$1,6 \\cdot 10^{-17}$ J."], c: 0, ex: "Câu 20.22. $\\Delta W_d = A = q(V_M - V_N) = 1,6 \\cdot 10^{-19} \\cdot 300$." },
-        { q: "Hai điểm M và N nằm trên cùng một đường sức của điện trường đều E. $U_{MN}$ là", a: ["$E/d$", "$Ed$", "$qEd$", "$A/d$"], c: 1, ex: "Câu 20.23. Công thức liên hệ $U = Ed$." },
-        { q: "Điện thế tại mặt đất thường được quy ước bằng", a: ["1 V.", "0 V.", "100 V.", "Vô hạn."], c: 1, ex: "Câu 20.24. Quy ước mốc thế năng mặt đất." }
-    ],
-    tf: [
-        { q: "Xét điện trường đều giữa hai bản kim loại phẳng song song, cách nhau $d$, hiệu điện thế $U$:", items: [
-            "Cường độ điện trường $E$ có giá trị bằng $U/d$.",
-            "Đường sức điện là những đường thẳng song song cách đều.",
-            "Điện thế tại mọi điểm giữa hai bản là bằng nhau.",
-            "Công lực điện dịch chuyển q giữa hai bản là $qU$."
-        ], c: [true, true, false, true], ex: "Câu 20.25. Ý 3 sai vì điện thế thay đổi dọc theo đường sức." },
-        { q: "Khi nói về điện thế và hiệu điện thế:", items: [
-            "Điện thế là đại lượng đặc trưng cho khả năng sinh công tại một điểm.",
-            "Đơn vị của điện thế và hiệu điện thế đều là Vôn (V).",
-            "Hiệu điện thế giữa hai điểm phụ thuộc vào mốc điện thế.",
-            "Mốc điện thế thường chọn ở mặt đất hoặc vô cực."
-        ], c: [true, true, false, true], ex: "Câu 20.26. Hiệu điện thế là đại lượng không đổi đối với mọi mốc điện thế." },
-        { q: "Một điện tích q dịch chuyển trong điện trường đều E từ M đến N dọc theo đường sức:", items: [
-            "Công lực điện $A_{MN}$ luôn mang giá trị dương.",
-            "Thế năng điện tại M là $W_M = qV_M$.",
-            "Hiệu điện thế $U_{MN} = E \\cdot d_{MN}$.",
-            "Nếu $q < 0$, lực điện sinh công âm khi dịch chuyển cùng chiều đường sức."
-        ], c: [false, true, true, true], ex: "Câu 20.27. Công có thể âm nếu dấu điện tích và chiều dịch chuyển ngược nhau." },
-        { q: "Về công của lực điện và thế năng điện:", items: [
-            "Lực điện là lực thế, công không phụ thuộc hình dạng đường đi.",
-            "Công của lực điện trên một đường cong kín luôn khác không.",
-            "Thế năng điện đặc trưng cho khả năng sinh công của hệ.",
-            "Khi lực điện sinh công dương, thế năng điện của hệ giảm."
-        ], c: [true, false, true, true], ex: "Câu 20.28. Công trên đường kín luôn bằng 0." },
-        { q: "Xét các đại lượng trong điện trường:", items: [
-            "Điện thế là đại lượng đại số.",
-            "Cường độ điện trường là đại lượng véc tơ.",
-            "Công của lực điện trường là đại lượng véc tơ.",
-            "Hiệu điện thế là đại lượng vô hướng."
-        ], c: [true, true, false, true], ex: "Câu 20.29. Công là đại lượng vô hướng." },
-        { q: "Liên hệ giữa E, U, d trong điện trường đều:", items: [
-            "Véc tơ cường độ điện trường hướng từ nơi có điện thế cao sang thấp.",
-            "Đơn vị của cường độ điện trường là V/m.",
-            "Khoảng cách d trong công thức $U = Ed$ là chiều dài quỹ đạo bất kì.",
-            "Nếu hiệu điện thế tăng 2 lần, cường độ điện trường tăng 2 lần."
-        ], c: [true, true, false, true], ex: "Câu 20.30. d là hình chiếu quỹ đạo lên phương đường sức." },
-        { q: "Đặc điểm của điện thế:", items: [
-            "Tại một điểm xác định, điện thế tỉ lệ thuận với điện tích q đặt tại đó.",
-            "Điện thế tại vô cực thường được chọn bằng 0.",
-            "Hai điểm nằm trên cùng một mặt đẳng thế có hiệu điện thế bằng 0.",
-            "Điện thế tại điểm M có giá trị bằng công dịch chuyển 1C từ M ra vô cực."
-        ], c: [false, true, true, true], ex: "Câu 20.31. Điện thế là đặc trưng của điện trường, không phụ thuộc q đặt vào." },
-        { q: "Về công và hiệu điện thế:", items: [
-            "Công dịch chuyển electron chống lại chiều đường sức là công dương.",
-            "Đơn vị eV (electron-volt) là một đơn vị của năng lượng.",
-            "1 eV có giá trị bằng $1,6 \\cdot 10^{-19}$ J.",
-            "Hiệu điện thế giữa hai điểm M, N là $U_{MN} = A_{MN} \\cdot q$."
-        ], c: [true, true, true, false], ex: "Câu 20.32. $U = A/q$." }
-    ],
-    short: [
-        { q: "Tính điện thế (V) tại điểm M biết công để dịch chuyển điện tích $q = 10^{-6}$ C từ vô cực về M là $3 \\cdot 10^{-3}$ J.", c: "3000", ex: "Câu 20.33. $V = A/q = 0,003 / 10^{-6} = 3000$ V." },
-        { q: "Hiệu điện thế giữa 2 bản là 200 V, cách nhau 2 cm. Tính cường độ điện trường giữa hai bản (đơn vị kV/m).", c: "10", ex: "Câu 20.34. $E = U/d = 200 / 0,02 = 10000$ V/m = 10 kV/m." },
-        { q: "Một quả cầu tích điện $q = 2 \\cdot 10^{-8}$ C. Công dịch chuyển từ M đến N là $4 \\cdot 10^{-6}$ J. Hiệu điện thế $U_{MN}$ (V) là bao nhiêu?", c: "200", ex: "Câu 20.36. $U = A/q = 4 \\cdot 10^{-6} / 2 \\cdot 10^{-8} = 200$ V." },
-        { q: "Cho các nhận định:\n1. Điện thế là véc tơ.\n2. Công lực điện không phụ thuộc quỹ đạo.\n3. V/m là đơn vị của E.\n4. $U_{MN} = V_M - V_N$.\n5. Thế năng $W = qV$.\nNhập dãy số các nhận định ĐÚNG theo thứ tự tăng dần.", c: "2345", ex: "Nhận định đúng là 2, 3, 4, 5. Điện thế là đại lượng vô hướng." },
-        { q: "Xét 8 nhận định về hiệu điện thế:\n1. 'Đơn vị là V.'\n2. 'Là đại lượng véc tơ.'\n3. 'Không phụ thuộc mốc điện thế.'\n4. 'Phụ thuộc quỹ đạo đi.'\n5. 'Đặc trưng cho khả năng sinh công.'\n6. 'Kí hiệu là E.'\n7. 'Luôn dương.'\n8. 'Bằng hiệu số điện thế.'\nChọn các nhận định ĐÚNG rồi ghi đáp án bằng một dãy số tăng dần.", c: "1358", ex: "Các nhận định đúng: 1 (V), 3 (không phụ thuộc mốc), 5 (sinh công), 8 (hiệu số điện thế)." },
-        { q: "Điện thế tại M là 15 V, tại N là 10 V. Công khi dịch chuyển proton ($1,6 \\cdot 10^{-19}$ C) từ M đến N là bao nhiêu aJ ($1 aJ = 10^{-18}$ J)?", c: "0,8", ex: "$A = q(V_M - V_N) = 1,6 \\cdot 10^{-19} \\cdot 5 = 8 \\cdot 10^{-19}$ J = 0,8 aJ." },
-        { q: "Dưới tác dụng của lực điện, một electron gia tốc từ nghỉ qua hiệu điện thế 284 V. Tính tốc độ của nó ($10^6$ m/s, lấy $m = 9,1 \\cdot 10^{-31}$ kg, $e = 1,6 \\cdot 10^{-19}$ C). Làm tròn đến số nguyên.", c: "10", ex: "Dùng định luật bảo toàn năng lượng: $eU = 0,5mv^2$. Giải ra $v \\approx 10 \\cdot 10^6$ m/s." },
-        { q: "Trong điện trường đều cách nhau 10 cm, hiệu điện thế 50 V. Một điện tích $q = 2 \\mu C$ di chuyển 5 cm dọc đường sức. Công thực hiện là bao nhiêu mJ?", c: "0,05", ex: "$E = U/d = 50 / 0,1 = 500$ V/m. $A = qEd' = 2 \\cdot 10^{-6} \\cdot 500 \\cdot 0,05 = 5 \\cdot 10^{-5}$ J = 0,05 mJ." }
-    ]
-};
+let questions = [
+{q:"Điện thế tại một điểm đặc trưng cho?",a:["Tác dụng lực","Khả năng sinh công","Dự trữ năng lượng","Mức độ mạnh"],correct:1},
+{q:"Đơn vị điện thế?",a:["J","V","A","C"],correct:1},
+{q:"Hiệu điện thế là?",a:["Lực","Khả năng sinh công giữa 2 điểm","Điện tích","Dòng điện"],correct:1},
+{q:"Trong điện trường đều U = ?",a:["Ed","E/d","d/E","E+d"],correct:0},
+{q:"Điện thế phụ thuộc?",a:["Không phụ thuộc","Luôn dương","Phụ thuộc mốc","Luôn âm"],correct:2},
+{q:"Hiệu điện thế 12V nghĩa là?",a:["1C sinh công 12J","Điện tích 12C","Electron 12J","E=12"],correct:0},
+{q:"Dòng điện chạy từ?",a:["Thấp→cao","Cao→thấp","0→dương","Âm→dương"],correct:1},
+{q:"Thế năng W = ?",a:["q/V","qV","V/q","q+V"],correct:1},
+{q:"Đi dọc đường sức, điện thế?",a:["Tăng","Giảm","Không đổi","0"],correct:1},
+{q:"Mốc điện thế thường chọn?",a:["Cực dương","Mặt đất","Bất kỳ","Max"],correct:1}
+];
 
-/** LOGIC TRÒ CHƠI */
-let state = {
-    user: {}, questions: [], curIdx: 0, score: 0, 
-    time: 180, timer: null, active: false, 
-    helps: { h50: true, call: true, aud: true },
-    history: [],
-    isPractice: false
-};
+let current = 0;
+let score = 0;
+let time = 30;
+let timer;
 
-function playSound(s) { 
-    const el = document.getElementById('snd-'+s);
-    el.currentTime = 0; el.play(); 
+function startGame(){
+document.getElementById("start").style.display="none";
+document.getElementById("game").style.display="block";
+showQuestion();
 }
 
-// Hàm xáo trộn mảng (Fisher-Yates)
-function shuffle(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-}
-
-function showModal(title, msg, onBtnClick = null, type = 'normal') {
-    const modal = document.getElementById('custom-modal');
-    const container = document.getElementById('modal-container');
-    container.className = 'modal-content';
-    if(type === 'fail') container.classList.add('fail');
-    if(type === 'milestone') container.classList.add('success-milestone');
-    
-    document.getElementById('modal-title').innerText = title;
-    document.getElementById('modal-msg').innerText = msg;
-    modal.style.display = 'flex';
-    document.getElementById('btn-modal-close').onclick = () => {
-        modal.style.display = 'none';
-        if (onBtnClick) onBtnClick();
-    };
-}
-
-function initScoreboard() {
-    const sb = document.getElementById('scoreboard');
-    sb.innerHTML = '';
-    for(let i=1; i<=20; i++) {
-        let p = i<=5 ? i : (i<=10 ? i-3 : 7 + (i-10)*0.3);
-        const div = document.createElement('div');
-        div.className = `score-step ${i%5==0 ? 'm'+i : ''}`;
-        div.id = `step-${i-1}`;
-        div.innerHTML = `${i}<br>${p.toFixed(1)}`;
-        sb.appendChild(div);
-    }
-}
-
-document.getElementById('btn-rules').onclick = () => showScreen('screen-rules');
-document.getElementById('btn-back-home').onclick = () => showScreen('screen-auth');
-
-document.getElementById('btn-practice').onclick = () => launchGame(true);
-document.getElementById('btn-start').onclick = () => launchGame(false);
-
-function launchGame(isPracticeMode) {
-    const name = document.getElementById('in-name').value;
-    const sbd = document.getElementById('in-sbd').value;
-    if(!name || !sbd) return alert("Vui lòng nhập Họ tên và SBD!");
-
-    state.user = { name, sbd, class: document.getElementById('in-class').value, school: document.getElementById('in-school').value };
-    state.isPractice = isPracticeMode;
-    
-    // Cập nhật Header
-    document.getElementById('h-name').innerText = name;
-    document.getElementById('h-sbd').innerText = sbd;
-    document.getElementById('h-idx').innerText = "1";
-    document.getElementById('h-score').innerText = "0.0";
-    document.getElementById('top-bar').style.display = 'flex';
-
-    // Xáo trộn & Chọn câu hỏi
-    let p1 = shuffle([...FULL_BANK.mcq]).slice(0, 12);
-    let p2 = shuffle([...FULL_BANK.tf]).slice(0, 4);
-    let p3 = shuffle([...FULL_BANK.short]).slice(0, 4);
-    state.questions = [...p1, ...p2, ...p3];
-    
-    state.curIdx = 0; state.score = 0; state.active = true;
-    state.history = []; state.helps = { h50: true, call: true, aud: true };
-    updateHelpUI();
-    initScoreboard();
-    showScreen('screen-play');
-    renderQ();
-}
-
-function renderQ() {
-    const q = state.questions[state.curIdx];
-    document.getElementById('q-text').innerHTML = `Câu ${state.curIdx+1}: ${q.q}`;
-    document.getElementById('h-idx').innerText = state.curIdx + 1;
-    
-    // Reset areas
-    const mcq = document.getElementById('area-mcq');
-    const tf = document.getElementById('area-tf');
-    const sa = document.getElementById('area-sa');
-    mcq.style.display = tf.style.display = sa.style.display = 'none';
-
-    // Highlight scoreboard
-    document.querySelectorAll('.score-step').forEach(s => s.classList.remove('active'));
-    document.getElementById(`step-${state.curIdx}`).classList.add('active');
-
-    // Nút dừng cuộc chơi từ câu 6
-    document.getElementById('btn-stop').style.display = state.curIdx >= 5 ? 'block' : 'none';
-
-    if(state.curIdx < 12) { // MCQ
-        mcq.style.display = 'grid'; mcq.innerHTML = '';
-        
-        // XÁO TRỘN PHƯƠNG ÁN TRẢ LỜI
-        let options = q.a.map((txt, i) => ({ txt, originalIdx: i }));
-        shuffle(options);
-        
-        options.forEach((opt, i) => {
-            const btn = document.createElement('button');
-            btn.className = 'btn-opt';
-            btn.id = `opt-${i}`;
-            btn.innerHTML = `<b>${['A','B','C','D'][i]}.</b> ${opt.txt}`;
-            btn.onclick = () => { playSound('click'); handleAns(opt.originalIdx === q.c, i, options); };
-            mcq.appendChild(btn);
-        });
-    } else if(state.curIdx < 16) { // TF
-        tf.style.display = 'block'; const rows = document.getElementById('tf-rows'); rows.innerHTML = '';
-        state.curTF = [null, null, null, null];
-        q.items.forEach((txt, i) => {
-            const r = document.createElement('div');
-            r.style = "background:rgba(255,255,255,0.05); padding:15px; border-radius:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;";
-            r.innerHTML = `<div style="flex:1;">${['a','b','c','d'][i]}) ${txt}</div>
-                <div style="display:flex; gap:10px;">
-                    <button class="btn btn-blue" style="padding:10px 15px; margin:0;" onclick="selTF(${i}, true, this)">ĐÚNG</button>
-                    <button class="btn btn-red" style="padding:10px 15px; margin:0;" onclick="selTF(${i}, false, this)">SAI</button>
-                </div>`;
-            rows.appendChild(r);
-        });
-        document.getElementById('btn-submit-tf').disabled = true;
-    } else { // Short
-        sa.style.display = 'block'; document.getElementById('sa-input').value = '';
-    }
-
-    startTimer();
-    if(window.MathJax) window.MathJax.typesetPromise();
-}
-
-function selTF(idx, val, btn) {
-    playSound('click'); state.curTF[idx] = val;
-    btn.parentElement.querySelectorAll('button').forEach(b => b.style.outline = 'none');
-    btn.style.outline = '3px solid white';
-    if(state.curTF.every(v => v !== null)) document.getElementById('btn-submit-tf').disabled = false;
-}
-
-document.getElementById('btn-submit-tf').onclick = () => {
-    const q = state.questions[state.curIdx];
-    const isOk = JSON.stringify(state.curTF) === JSON.stringify(q.c);
-    handleAns(isOk, [...state.curTF], q.c);
-};
-
-document.getElementById('btn-submit-sa').onclick = () => {
-    const q = state.questions[state.curIdx];
-    const val = document.getElementById('sa-input').value.trim().replace(',', '.');
-    const isOk = val == q.c.replace(',', '.');
-    handleAns(isOk, val, q.c);
-};
-
-function handleAns(isCorrect, userChoice, correctData) {
-    clearInterval(state.timer);
-    const qData = state.questions[state.curIdx];
-    
-    state.history.push({ 
-        q: qData.q, 
-        user: userChoice, 
-        correct: correctData || qData.c, 
-        isOk: isCorrect, 
-        ex: qData.ex,
-        type: state.curIdx < 12 ? 'mcq' : (state.curIdx < 16 ? 'tf' : 'sa'),
-        mcqOpts: state.curIdx < 12 ? qData.a : null,
-        tfItems: state.curIdx < 16 ? qData.items : null
-    });
-
-    if(isCorrect) {
-        playSound('win');
-        if(state.curIdx < 12) {
-            document.querySelectorAll('.btn-opt').forEach((b, i) => {
-                if(i === userChoice) b.classList.add('correct');
-            });
-        }
-
-        setTimeout(() => {
-            if(state.curIdx === 4) {
-                showModal("🏆 XUẤT SẮC!", "Chúc mừng bạn đã vượt qua mốc 5 điểm! Điểm của bạn hiện là 5.0. Nhấn TIẾP TỤC để chinh phục đỉnh cao mới!", () => {
-                    state.curIdx++; renderQ();
-                }, 'milestone');
-            } else if(state.curIdx === 9) {
-                showModal("🌟 TUYỆT VỜI!", "Chúc mừng bạn đã vượt qua mốc 7 điểm! Chỉ còn 10 câu nữa để trở thành Triệu phú tri thức. Cố gắng lên!", () => {
-                    state.curIdx++; renderQ();
-                }, 'milestone');
-            } else {
-                state.curIdx++;
-                if(state.curIdx >= 20) finishGame(10); else renderQ();
-            }
-        }, 1200);
-    } else {
-        playSound('fail');
-        if(state.curIdx < 12) {
-             document.querySelectorAll('.btn-opt').forEach((b, i) => {
-                if(i === userChoice) b.classList.add('wrong');
-            });
-        }
-        setTimeout(() => {
-            showModal("❌ RẤT TIẾC!", "Rất tiếc, bạn chưa làm đúng câu này, Kết thúc cuộc chơi! Mời bạn xem lại lịch sử để rút kinh nghiệm và làm lại.", () => {
-                finishGame(state.curIdx < 5 ? 0 : (state.curIdx < 10 ? 5 : 7));
-            }, 'fail');
-        }, 1200);
-    }
-}
-
-function startTimer() {
-    clearInterval(state.timer); state.time = 180;
-    document.getElementById('timer-sec').innerText = state.time;
-    state.timer = setInterval(() => {
-        state.time--; document.getElementById('timer-sec').innerText = state.time;
-        if(state.time <= 0) { 
-            clearInterval(state.timer); 
-            showModal("⏰ HẾT GIỜ!", "Thời gian suy nghĩ đã hết. Cuộc chơi dừng lại tại đây.", () => finishGame(), 'fail'); 
-        }
-    }, 1000);
-}
-
-// CHỐNG GIAN LẬN (CHỈ KÍCH HOẠT KHI KHÔNG PHẢI LUYỆN TẬP)
-document.addEventListener('visibilitychange', () => {
-    if(document.hidden && state.active && !state.isPractice) {
-        showModal("⚠️ CẢNH BÁO!", "Bạn đã rời khỏi màn hình Ghế nóng. Hệ thống tự động nộp bài và kết thúc cuộc chơi.", () => finishGame());
-    }
+function showQuestion(){
+let q = questions[current];
+document.getElementById("question").innerText = q.q;
+let ansDiv = document.getElementById("answers");
+ansDiv.innerHTML="";
+q.a.forEach((ans,i)=>{
+let btn=document.createElement("button");
+btn.innerText=ans;
+btn.onclick=()=>checkAnswer(i);
+ansDiv.appendChild(btn);
 });
-
-function finishGame(forcedScore) {
-    state.active = false; clearInterval(state.timer);
-    showScreen('screen-result');
-    
-    let score = forcedScore !== undefined ? forcedScore : calculateCurrentScore();
-    let rank = score >= 10 ? "XUẤT SẮC" : (score >= 8 ? "TỐT" : "KHÁ");
-    
-    document.getElementById('res-summary').innerHTML = `
-        Chúc mừng Triệu phú tri thức <b>${state.user.name}</b><br>
-        SBD: ${state.user.sbd} - Lớp: ${state.user.class}<br>
-        Điểm số đạt được: <span style="font-size: 50px; color: gold;">${score.toFixed(1)}</span> / 10.0<br>
-        Xếp loại: <b>${rank}</b><br>
-        <p style="font-size: 16px; margin-top: 10px; color: #94a3b8;">${state.isPractice ? "Chế độ: LUYỆN TẬP" : "Chế độ: NGỒI GHẾ NÓNG"}</p>
-    `;
-    if(score >= 8) startFW();
+startTimer();
 }
 
-function calculateCurrentScore() {
-    let i = state.curIdx - 1;
-    if(i < 0) return 0;
-    let s = i < 5 ? i + 1 : (i < 10 ? i - 3 : 7 + (i - 10) * 0.3);
-    document.getElementById('h-score').innerText = s.toFixed(1);
-    return s;
+function checkAnswer(i){
+clearInterval(timer);
+let correct = questions[current].correct;
+if(i===correct){
+score++;
+alert("Đúng!");
+}else{
+alert("Sai! Kết thúc.");
+endGame();
+return;
+}
+current++;
+if(current>=questions.length){
+endGame();
+}else{
+showQuestion();
+}
 }
 
-document.getElementById('btn-history').onclick = () => {
-    const panel = document.getElementById('history-panel');
-    panel.innerHTML = '<h2 style="color: gold; text-align:center; margin: 30px 0; font-size: 28px;">CHI TIẾT LỊCH SỬ LÀM BÀI</h2>';
-    panel.style.display = 'block';
-
-    state.history.forEach((h, idx) => {
-        const card = document.createElement('div');
-        card.className = `history-card ${h.isOk ? 'is-ok' : 'is-fail'}`;
-        
-        let userDisplay = "";
-        let correctDisplay = "";
-
-        if(h.type === 'mcq') {
-            userDisplay = h.user !== null ? `${['A','B','C','D'][h.user]}. ${h.mcqOpts[h.user] || ""}` : "Không trả lời";
-            correctDisplay = `${['A','B','C','D'][h.correct]}. ${h.mcqOpts[h.correct]}`;
-        } else if(h.type === 'tf') {
-            userDisplay = h.user.map((v, i) => `${['a','b','c','d'][i]}: ${v?'Đ':'S'}`).join(', ');
-            correctDisplay = h.correct.map((v, i) => `${['a','b','c','d'][i]}: ${v?'Đ':'S'}`).join(', ');
-        } else {
-            userDisplay = h.user || "Không trả lời";
-            correctDisplay = h.correct;
-        }
-
-        card.innerHTML = `
-            <div class="q-title">Câu ${idx+1}: ${h.q}</div>
-            <div class="user-choice ${h.isOk ? 'right' : 'wrong'}">Bạn chọn: ${userDisplay}</div>
-            <div class="correct-ans">Đáp án đúng: ${correctDisplay}</div>
-            <div class="explain-box"><b>Giải thích/Gợi ý:</b> ${h.ex}</div>
-        `;
-        panel.appendChild(card);
-    });
-    window.scrollTo({ top: panel.offsetTop, behavior: 'smooth' });
-    if(window.MathJax) window.MathJax.typesetPromise();
-};
-
-/** TRỢ GIÚP */
-function updateHelpUI() {
-    document.getElementById('h-5050').disabled = !state.helps.h50 || state.curIdx >= 12;
-    document.getElementById('h-call').disabled = !state.helps.call;
-    document.getElementById('h-aud').disabled = !state.helps.aud;
+function startTimer(){
+time=30;
+document.getElementById("timer").innerText="Time: "+time;
+timer=setInterval(()=>{
+time--;
+document.getElementById("timer").innerText="Time: "+time;
+if(time<=0){
+clearInterval(timer);
+alert("Hết giờ!");
+endGame();
+}
+},1000);
 }
 
-document.getElementById('h-5050').onclick = () => {
-    state.helps.h50 = false; updateHelpUI();
-    let opts = document.querySelectorAll('.btn-opt');
-    let q = state.questions[state.curIdx];
-    let removed = 0;
-    // Tìm các phương án sai để ẩn (logic giả định dựa trên việc click chọn originalIdx)
-    // Để chính xác nhất cần lưu mảng options xáo trộn vào state, ở đây ta làm đơn giản:
-    opts.forEach((btn, i) => {
-        if(!btn.innerText.includes(q.a[q.c]) && removed < 2) {
-             btn.style.visibility = 'hidden';
-             removed++;
-        }
-    });
-};
-
-document.getElementById('h-call').onclick = () => {
-    state.helps.call = false; updateHelpUI();
-    showHelp("GỌI ĐIỆN CHO NGƯỜI THÂN", "Người thân: 'Mình nghĩ đáp án này liên quan mật thiết đến công thức tính công dịch chuyển điện tích $A = qU$ và định nghĩa điện thế đấy!'");
-};
-
-document.getElementById('h-aud').onclick = () => {
-    state.helps.aud = false; updateHelpUI();
-    showHelp("Ý KIẾN KHÁN GIẢ", "75% khán giả trường quay khuyên bạn nên tập trung vào định nghĩa Điện thế đặc trưng cho phương diện sinh công.");
-};
-
-function showHelp(t, m) {
-    showModal(t, m, null, 'normal');
-    if(window.MathJax) window.MathJax.typesetPromise();
+function endGame(){
+alert("Điểm: "+score);
+location.reload();
 }
-
-/** TIỆN ÍCH */
-function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-}
-
-function startFW() {
-    const c = document.getElementById('canvas-fw'); const ctx = c.getContext('2d');
-    c.width = window.innerWidth; c.height = window.innerHeight;
-    let ps = [];
-    let intv = setInterval(() => {
-        if(!document.getElementById('screen-result').classList.contains('active')) { clearInterval(intv); return; }
-        for(let i=0; i<15; i++) ps.push({x:Math.random()*c.width, y:c.height, vx:Math.random()*4-2, vy:-Math.random()*12-5, c:`hsl(${Math.random()*360},100%,50%)`, a:1});
-    }, 400);
-    function anim() {
-        ctx.clearRect(0,0,c.width,c.height);
-        ps.forEach((p, i) => {
-            p.x+=p.vx; p.y+=p.vy; p.vy+=0.15; p.a-=0.01;
-            ctx.fillStyle = p.c; ctx.globalAlpha = p.a;
-            ctx.fillRect(p.x, p.y, 4, 4);
-            if(p.a <= 0) ps.splice(i, 1);
-        });
-        requestAnimationFrame(anim);
-    }
-    anim();
-}
-
-document.getElementById('btn-restart').onclick = () => location.reload();
-document.getElementById('btn-stop').onclick = () => { if(confirm("Bạn muốn dừng chơi và bảo toàn điểm?")) finishGame(); };
-
-initScoreboard();
 </script>
+
 </body>
 </html>
